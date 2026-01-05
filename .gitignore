@@ -1,5 +1,5 @@
 # Environment files
-.env
+# .env  # REMOVED - User wants credentials in repo
 *.env.local
 
 # Miscellaneous

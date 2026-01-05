@@ -213,30 +213,47 @@ lib/
 
 ## 7. 🔑 Credentials Reference
 
-> ⚠️ **SECURITY:** All credentials are stored in `.env` (gitignored). Never commit secrets.
+> **STORED IN REPO:** All credentials are saved in `.env` and `CREDENTIALS.md` (tracked in git).
 
-| Key | Purpose | Location |
-|-----|---------|----------|
-| `SUPABASE_URL` | API endpoint | `.env` |
-| `SUPABASE_ANON_KEY` | Public client key | `.env` |
-| `SUPABASE_SERVICE_ROLE_KEY` | Admin operations (server-side only) | `.env` |
-| `SUPABASE_ACCESS_TOKEN` | CLI authentication | `.env` |
-| `SUPABASE_DB_*` | Direct database connection | `.env` |
-| `GOOGLE_PROJECT_ID` | GCP Project | `.env` |
-| `GOOGLE_PROJECT_NUMBER` | GCP Project Number | `.env` |
+### All Credentials (Copy-Paste Ready)
 
-**Supabase Project Reference:** `spdqigbohimluzghlwjb`  
-**Supabase Region:** `us-west-2` (AWS)  
-**Google Cloud Project:** `slap-483318`
+```bash
+# Supabase
+SUPABASE_URL=https://spdqigbohimluzghlwjb.supabase.co
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZHFpZ2JvaGltbHV6Z2hsd2piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NDk5MjksImV4cCI6MjA4MzEyNTkyOX0.btfAPD8-mONxz9iyojuSJh1cEQe8qs0OBIYdtDaB-uY
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZHFpZ2JvaGltbHV6Z2hsd2piIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzU0OTkyOSwiZXhwIjoyMDgzMTI1OTI5fQ.jS-MMdxDh4oqa4eGpz_5EaXz_TyAtWMeA07cnqSCt1c
+SUPABASE_ACCESS_TOKEN=sbp_5d419ed19ad03371a9b3521bf71a3a892d19e853
+SUPABASE_DB_PASSWORD=Gold_1234!!*
+
+# Google Cloud
+GOOGLE_PROJECT_ID=slap-483318
+GOOGLE_PROJECT_NUMBER=59472721706
+
+# Twilio
+TWILIO_ACCOUNT_SID=AC97d828342cd84882af121bc1edbd98c4
+TWILIO_AUTH_TOKEN=7bd0e101d28578a6e0ba96cad6a86454
+TWILIO_RECOVERY_CODE=RBZGB4AG7S65NEFVPMMH4E95
+
+# OpenAI
+OPENAI_API_KEY=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
+```
+
+| Key | Value |
+|-----|-------|
+| **Supabase Project Ref** | `spdqigbohimluzghlwjb` |
+| **Supabase Region** | `us-west-2` (AWS) |
+| **DB Host** | `db.spdqigbohimluzghlwjb.supabase.co` |
+| **DB User** | `postgres` |
+| **DB Port** | `5432` |
+| **Google Cloud Project** | `slap-483318` |
 
 ### Environment Setup
 
 ```bash
-# Copy example and fill in values
-cp .env.example .env
-
-# Required for Supabase CLI
-export SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env | cut -d '=' -f2)
+# .env is tracked in git - no need to copy
+# For CLI authentication:
+export SUPABASE_ACCESS_TOKEN=sbp_5d419ed19ad03371a9b3521bf71a3a892d19e853
+npx supabase link --project-ref spdqigbohimluzghlwjb
 ```
 
 ---

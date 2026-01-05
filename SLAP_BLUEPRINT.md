@@ -8,38 +8,46 @@
 **Backend:** Supabase  
 **Hosting:** GitHub Codespaces
 
-## 2. Configuration
+## 2. 🔑 ALL CREDENTIALS (MASTER REFERENCE)
 
-> ⚠️ **SECURITY:** All credentials are stored in `.env` (gitignored). Never hardcode or commit secrets.
+> **NOTE:** All credentials are stored in `.env` AND `CREDENTIALS.md` in repo for easy reference.
 
-### Environment Variables (`.env`)
+### Supabase
+| Key | Value |
+|-----|-------|
+| **URL** | `https://spdqigbohimluzghlwjb.supabase.co` |
+| **Project Ref** | `spdqigbohimluzghlwjb` |
+| **Region** | `us-west-2` (AWS) |
+| **Anon Key** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZHFpZ2JvaGltbHV6Z2hsd2piIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1NDk5MjksImV4cCI6MjA4MzEyNTkyOX0.btfAPD8-mONxz9iyojuSJh1cEQe8qs0OBIYdtDaB-uY` |
+| **Service Role Key** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwZHFpZ2JvaGltbHV6Z2hsd2piIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NzU0OTkyOSwiZXhwIjoyMDgzMTI1OTI5fQ.jS-MMdxDh4oqa4eGpz_5EaXz_TyAtWMeA07cnqSCt1c` |
+| **Access Token (CLI)** | `sbp_5d419ed19ad03371a9b3521bf71a3a892d19e853` |
+| **DB Password** | `Gold_1234!!*` |
+| **DB Host** | `db.spdqigbohimluzghlwjb.supabase.co` |
+| **DB User** | `postgres` |
+| **DB Port** | `5432` |
 
-| Variable | Purpose |
-|----------|---------|
-| `SUPABASE_URL` | Supabase project API endpoint |
-| `SUPABASE_ANON_KEY` | Public client key (JWT format) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Admin key - server-side only |
-| `SUPABASE_ACCESS_TOKEN` | CLI authentication |
-| `SUPABASE_DB_*` | Direct database connection |
-| `GOOGLE_PROJECT_ID` | GCP Project ID |
-| `GOOGLE_PROJECT_NUMBER` | GCP Project Number |
+### Google Cloud
+| Key | Value |
+|-----|-------|
+| **Project ID** | `slap-483318` |
+| **Project Number** | `59472721706` |
 
-### Supabase Project Details
-* **Project Reference:** `spdqigbohimluzghlwjb`
-* **Region:** `us-west-2` (AWS)
-* **URL:** `https://spdqigbohimluzghlwjb.supabase.co`
+### Twilio
+| Key | Value |
+|-----|-------|
+| **Account SID** | `AC97d828342cd84882af121bc1edbd98c4` |
+| **Auth Token** | `7bd0e101d28578a6e0ba96cad6a86454` |
+| **Recovery Code** | `RBZGB4AG7S65NEFVPMMH4E95` |
 
-### Google Cloud Configuration
-* **Project ID:** `slap-483318`
-* **Project Number:** `59472721706`
+### OpenAI
+| Key | Value |
+|-----|-------|
+| **API Key** | `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` |
 
-### Setup Instructions
+### CLI Setup
 ```bash
-# Copy the example and fill in your actual values
-cp .env.example .env
-
-# For CLI operations, export the access token
-export SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env | cut -d '=' -f2)
+export SUPABASE_ACCESS_TOKEN=sbp_5d419ed19ad03371a9b3521bf71a3a892d19e853
+supabase link --project-ref spdqigbohimluzghlwjb
 ```
 
 ## 3. Tech Stack
