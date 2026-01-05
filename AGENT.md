@@ -289,4 +289,55 @@ All tables have RLS enabled. Key policies:
 
 ---
 
-**Last Updated:** January 4, 2026
+## 10. 🔴 MANDATORY REQUIREMENTS (PERMANENT)
+
+> **⚠️ CRITICAL: These requirements apply to ALL future development work. No exceptions.**
+
+### 10.1 Real Data Only - NO MOCK DATA
+
+- **NEVER** use mock/fake data, hardcoded test data, or placeholder values in production code
+- **NEVER** bypass authentication for testing purposes
+- **ALWAYS** connect to the real Supabase database (`spdqigbohimluzghlwjb`)
+- **ALWAYS** use real-time subscriptions for live data updates
+- **ALWAYS** persist data to the database - nothing stored only in local state
+
+### 10.2 Full Functionality Required
+
+- **ALL buttons must work** - no placeholder click handlers
+- **ALL forms must save** - data must persist to database immediately
+- **ALL screens must load real data** - fetch from Supabase, not hardcoded
+- **ALL CRUD operations must be complete** - Create, Read, Update, Delete
+- **ALL error states must be handled** - show user-friendly messages
+
+### 10.3 Data Persistence Checklist
+
+For EVERY feature, verify:
+- [ ] Data saves to Supabase on user action
+- [ ] Data loads from Supabase on screen open
+- [ ] Real-time updates reflect across all clients
+- [ ] Data persists after app restart
+- [ ] Offline state is handled gracefully
+
+### 10.4 Testing Protocol
+
+Before marking any feature complete:
+1. **Test auth flow** - Login with real phone number
+2. **Test create** - Create new item, verify in database
+3. **Test read** - Refresh screen, verify data loads
+4. **Test update** - Modify item, verify change persists
+5. **Test delete** - Remove item, verify removal
+6. **Test real-time** - Open in two browsers, verify sync
+
+### 10.5 Code Review Requirements
+
+Every PR/commit must verify:
+- No `TODO` or `FIXME` comments left in production code
+- No commented-out code
+- No mock data or test stubs
+- All providers properly connected to repositories
+- All repositories properly calling Supabase
+- All error handling in place
+
+---
+
+**Last Updated:** January 5, 2026

@@ -68,8 +68,10 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
 -- BOARDS: Users can only see boards they are members of
 CREATE POLICY "Members can view boards" ON public.boards
   FOR SELECT USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members WHERE board_id = id
+    EXISTS (
+      SELECT 1 FROM public.board_members 
+      WHERE board_members.board_id = boards.id 
+      AND board_members.user_id = auth.uid()
     )
   );
 
@@ -78,48 +80,86 @@ CREATE POLICY "Authenticated users can create boards" ON public.boards
 
 CREATE POLICY "Board admins can update boards" ON public.boards
   FOR UPDATE USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members 
-      WHERE board_id = id AND role = 'admin'
+    EXISTS (
+      SELECT 1 FROM public.board_members 
+      WHERE board_members.board_id = boards.id 
+      AND board_members.user_id = auth.uid() 
+      AND board_members.role = 'admin'
     )
   );
 
 CREATE POLICY "Board admins can delete boards" ON public.boards
   FOR DELETE USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members 
-      WHERE board_id = id AND role = 'admin'
+    EXISTS (
+      SELECT 1 FROM public.board_members 
+      WHERE board_members.board_id = boards.id 
+      AND board_members.user_id = auth.uid() 
+      AND board_members.role = 'admin'
     )
   );
 
--- BOARD_MEMBERS: View members of boards you belong to
+-- BOARD_MEMBERS: Users can view members of boards they belong to
 CREATE POLICY "Members can view board members" ON public.board_members
-  FOR SELECT USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members bm WHERE bm.board_id = board_id
+  FOR SELECT USING (auth.uid() = user_id OR EXISTS (
+    SELECT 1 FROM public.board_members bm 
+    WHERE bm.board_id = board_members.board_id 
+    AND bm.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Board creators can add first member" ON public.board_members
+  FOR INSERT WITH CHECK (
+    auth.uid() = user_id OR
+    EXISTS (
+      SELECT 1 FROM public.boards 
+      WHERE boards.id = board_id 
+      AND boards.created_by = auth.uid()
+    ) OR
+    EXISTS (
+      SELECT 1 FROM public.board_members bm 
+      WHERE bm.board_id = board_members.board_id 
+      AND bm.user_id = auth.uid() 
+      AND bm.role = 'admin'
     )
   );
 
-CREATE POLICY "Board admins can manage members" ON public.board_members
-  FOR ALL USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members bm 
-      WHERE bm.board_id = board_id AND bm.role = 'admin'
+CREATE POLICY "Board admins can update members" ON public.board_members
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.board_members bm 
+      WHERE bm.board_id = board_members.board_id 
+      AND bm.user_id = auth.uid() 
+      AND bm.role = 'admin'
+    )
+  );
+
+CREATE POLICY "Board admins can delete members" ON public.board_members
+  FOR DELETE USING (
+    auth.uid() = user_id OR
+    EXISTS (
+      SELECT 1 FROM public.board_members bm 
+      WHERE bm.board_id = board_members.board_id 
+      AND bm.user_id = auth.uid() 
+      AND bm.role = 'admin'
     )
   );
 
 -- SLAPS: Members can manage slaps on their boards
 CREATE POLICY "Members can view slaps" ON public.slaps
   FOR SELECT USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members WHERE board_id = slaps.board_id
+    EXISTS (
+      SELECT 1 FROM public.board_members 
+      WHERE board_members.board_id = slaps.board_id 
+      AND board_members.user_id = auth.uid()
     )
   );
 
 CREATE POLICY "Members can create slaps" ON public.slaps
   FOR INSERT WITH CHECK (
-    auth.uid() IN (
-      SELECT user_id FROM public.board_members WHERE board_id = slaps.board_id
+    auth.uid() = user_id AND
+    EXISTS (
+      SELECT 1 FROM public.board_members 
+      WHERE board_members.board_id = slaps.board_id 
+      AND board_members.user_id = auth.uid()
     )
   );
 
