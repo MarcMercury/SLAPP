@@ -85,10 +85,13 @@ class SlapController extends _$SlapController {
 
   /// Delete a slap
   Future<void> deleteSlap(String slapId) async {
+    print('[SlapController] deleteSlap called with id: $slapId');
     try {
       final repository = ref.read(slapRepositoryProvider);
       await repository.deleteSlap(slapId);
+      print('[SlapController] deleteSlap successful');
     } catch (e) {
+      print('[SlapController] deleteSlap error: $e');
       // Handle error silently
     }
   }

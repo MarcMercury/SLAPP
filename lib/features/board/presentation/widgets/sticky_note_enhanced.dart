@@ -7,9 +7,9 @@ import 'package:slapp/features/board/data/models/slap_model.dart';
 /// Enhanced sticky note widget with drag, edit, and color support
 class StickyNoteEnhanced extends StatefulWidget {
   final Slap slap;
-  final VoidCallback onDragStart;
+  final Function(Offset) onDragStart; // Pass global position
   final Function(Offset) onDragUpdate;
-  final Function(Offset) onDragEnd;
+  final VoidCallback onDragEnd; // No position needed - parent tracks it
   final Function(String) onContentChanged;
   final VoidCallback onColorTap;
   final VoidCallback onDelete;
@@ -203,6 +203,14 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
         child: Stack(
           clipBehavior: Clip.none,
           children: [
+            // Tap anywhere else to close - MUST be first (behind everything)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _showOptions = false),
+              ),
+            ),
+            
             // The draggable/tappable note - positioned to account for menu space
             Positioned(
               top: 70, // Space for menu above
@@ -219,78 +227,67 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
               left: 0,
               right: 0,
               child: Center(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {}, // Capture taps to prevent closing
-                  child: Material(
-                    elevation: 8,
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildOptionButton(
+                          icon: Icons.edit,
+                          color: Colors.black87,
+                          label: 'Edit',
+                          onTap: () {
+                            setState(() => _showOptions = false);
+                            _startEditing();
+                          },
+                        ),
+                        _buildOptionButton(
+                          icon: Icons.mic,
+                          color: SlapColors.primary,
+                          label: 'Voice',
+                          onTap: () {
+                            setState(() => _showOptions = false);
+                            widget.onMicTap();
+                          },
+                        ),
+                        _buildOptionButton(
+                          icon: Icons.palette,
+                          color: Colors.orange,
+                          label: 'Color',
+                          onTap: () {
+                            setState(() => _showOptions = false);
+                            widget.onColorTap();
+                          },
+                        ),
+                        // Show Separate button only for merged notes
+                        if (widget.slap.isMerged && widget.onSeparateTap != null)
                           _buildOptionButton(
-                            icon: Icons.edit,
-                            color: Colors.black87,
-                            label: 'Edit',
+                            icon: Icons.call_split,
+                            color: Colors.blue,
+                            label: 'Split',
                             onTap: () {
                               setState(() => _showOptions = false);
-                              _startEditing();
+                              widget.onSeparateTap!();
                             },
                           ),
-                          _buildOptionButton(
-                            icon: Icons.mic,
-                            color: SlapColors.primary,
-                            label: 'Voice',
-                            onTap: () {
-                              setState(() => _showOptions = false);
-                              widget.onMicTap();
-                            },
-                          ),
-                          _buildOptionButton(
-                            icon: Icons.palette,
-                            color: Colors.orange,
-                            label: 'Color',
-                            onTap: () {
-                              setState(() => _showOptions = false);
-                              widget.onColorTap();
-                            },
-                          ),
-                          // Show Separate button only for merged notes
-                          if (widget.slap.isMerged && widget.onSeparateTap != null)
-                            _buildOptionButton(
-                              icon: Icons.call_split,
-                              color: Colors.blue,
-                              label: 'Split',
-                              onTap: () {
-                                setState(() => _showOptions = false);
-                                widget.onSeparateTap!();
-                              },
-                            ),
-                          _buildOptionButton(
-                            icon: Icons.delete,
-                            color: SlapColors.error,
-                            label: 'Delete',
-                            onTap: () {
-                              setState(() => _showOptions = false);
-                              widget.onDelete();
-                            },
-                          ),
-                        ],
-                      ),
+                        _buildOptionButton(
+                          icon: Icons.delete,
+                          color: SlapColors.error,
+                          label: 'Delete',
+                          onTap: () {
+                            print('[StickyNote] Delete button tapped for slap: ${widget.slap.id}');
+                            setState(() => _showOptions = false);
+                            widget.onDelete();
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-            ),
-            
-            // Tap anywhere else to close
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => setState(() => _showOptions = false),
               ),
             ),
           ],
@@ -311,22 +308,19 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
           },
           onPanStart: (details) {
             if (_isEditing) return;
-            _startPosition = Offset(widget.slap.positionX, widget.slap.positionY);
-            _currentPosition = details.globalPosition;
-            widget.onDragStart();
+            // Pass global position to parent for coordinate conversion
+            widget.onDragStart(details.globalPosition);
             _animController.forward();
           },
           onPanUpdate: (details) {
             if (_isEditing) return;
-            final delta = details.globalPosition - _currentPosition;
-            _currentPosition = details.globalPosition;
-            final newPosition = _startPosition + delta;
-            _startPosition = newPosition;
+            // Pass global position to parent for coordinate conversion
             widget.onDragUpdate(details.globalPosition);
           },
           onPanEnd: (details) {
             if (_isEditing) return;
-            widget.onDragEnd(_startPosition);
+            // Parent tracks position, just notify drag ended
+            widget.onDragEnd();
             _animController.reverse();
           },
           child: ScaleTransition(

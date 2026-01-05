@@ -1,5 +1,6 @@
 // Supabase Edge Function for AI-powered idea merging
 // This proxies OpenAI calls to avoid CORS issues
+// Uses Context-Aware Routing to detect note type and merge appropriately
 
 import "https://deno.land/x/xhr@0.3.0/mod.ts";
 
@@ -7,6 +8,35 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// The Brain: Context-aware system prompt that detects intent and merges accordingly
+const SYSTEM_PROMPT = `You are the "Synthesis Engine" for SLAP, a sticky note app. Merge two notes into one "Super Note."
+
+STEP 1: ANALYZE - Detect the intent of both notes:
+
+📋 LIST KEEPER (To-dos, groceries, bullet points, numbered items)
+   → IF notes contain lists, bullets, commas, or short fragments
+   → ACTION: Combine into a clean bulleted list. Remove duplicates. Keep terse. NO paragraphs.
+
+📖 STORYTELLER (Creative writing, brainstorming, concepts, ideas)
+   → IF notes are sentences, paragraphs, or abstract concepts
+   → ACTION: Weave into ONE cohesive sentence or short phrase. Find the deeper connection.
+
+📅 SCHEDULER (Dates, times, plans, meetings)
+   → IF notes contain times, dates, or locations
+   → ACTION: Create a structured mini-agenda. Chronological order.
+
+⚖️ DEBATER (Conflicting or contrasting ideas)
+   → IF notes contradict or present alternatives
+   → ACTION: Present both clearly: "X vs Y" or "Consider both: X and Y"
+
+STEP 2: EXECUTE - Merge using the appropriate rule above.
+
+RULES:
+- Output ONLY the merged content (no labels, no "Category:", no explanations)
+- Keep output BRIEF - suitable for a sticky note (max 2-3 lines)
+- Lists stay as lists. Stories stay as stories.
+- Be practical, not flowery.`;
 
 // Fallback synthesis when AI is unavailable
 function synthesizeFallback(idea1: string, idea2: string): string {
@@ -17,16 +47,28 @@ function synthesizeFallback(idea1: string, idea2: string): string {
   const clean1 = idea1.trim();
   const clean2 = idea2.trim();
   
-  // For short phrases, create an exploration prompt
+  // Detect if either looks like a list (has bullets, numbers, or commas)
+  const listPattern = /^[-•*\d]|,\s+\w|;\s+\w/;
+  const isListy = listPattern.test(clean1) || listPattern.test(clean2) || 
+                  (clean1.split(',').length > 2) || (clean2.split(',').length > 2);
+  
+  if (isListy) {
+    // Combine as list items
+    const items1 = clean1.split(/[,;\n]/).map(s => s.trim()).filter(s => s);
+    const items2 = clean2.split(/[,;\n]/).map(s => s.trim()).filter(s => s);
+    const combined = [...new Set([...items1, ...items2])];
+    return combined.map(item => `• ${item.replace(/^[-•*\d.)\s]+/, '')}`).join('\n');
+  }
+  
+  // For short phrases, keep it simple
   const words1 = clean1.split(' ').length;
   const words2 = clean2.split(' ').length;
   
-  if (words1 <= 3 && words2 <= 3) {
-    return `💡 "${clean1}" meets "${clean2}" — explore how these concepts amplify each other`;
+  if (words1 <= 5 && words2 <= 5) {
+    return `${clean1} + ${clean2}`;
   }
   
-  // For longer ideas, create a synthesis narrative
-  return `✨ Synthesis:\n\n${clean1}\n\n↔️ Combined with:\n\n${clean2}\n\n💭 These ideas together suggest a bigger opportunity. Consider the intersection.`;
+  return `${clean1}\n↔️\n${clean2}`;
 }
 
 Deno.serve(async (req) => {
@@ -64,37 +106,15 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a strategic thinking assistant for a collaborative brainstorming app called SLAP.
-
-When users drag sticky notes on top of each other (a "SLAP"), your job is to SYNTHESIZE their ideas into something greater than the sum of its parts.
-
-Your approach:
-1. UNDERSTAND the intent behind each idea - what problem are they solving? What goal are they working toward?
-2. IDENTIFY connections - how do these ideas relate? Do they complement, contrast, or build on each other?
-3. SYNTHESIZE creatively - don't just combine words, create a NEW insight that captures the best of both
-4. ADD VALUE - contribute your own logical reasoning to enhance the merged idea
-5. MAKE IT ACTIONABLE - the result should be something the user can act on
-
-Rules:
-- Maximum 3-4 sentences
-- Start with the core synthesized insight
-- Include any strategic implications or next steps
-- Be inspiring but practical
-- Never just concatenate - truly THINK about what these ideas mean together`
+            content: SYSTEM_PROMPT
           },
           {
             role: 'user',
-            content: `SLAP! Two ideas have been merged together. Think deeply about what combining these could mean:
-
-IDEA 1: "${idea1}"
-
-IDEA 2: "${idea2}"
-
-What new insight emerges from combining these ideas? What's the bigger picture they're pointing to?`
+            content: `Note A: "${idea1}"\n\nNote B: "${idea2}"`
           }
         ],
-        max_tokens: 200,
-        temperature: 0.85,
+        max_tokens: 150,
+        temperature: 0.4, // Lower = more logical/practical, Higher = more creative
       }),
     });
 

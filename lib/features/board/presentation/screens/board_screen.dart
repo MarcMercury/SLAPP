@@ -25,10 +25,12 @@ class BoardScreen extends ConsumerStatefulWidget {
 class _BoardScreenState extends ConsumerState<BoardScreen>
     with TickerProviderStateMixin {
   final TransformationController _transformController = TransformationController();
+  final GlobalKey _boardKey = GlobalKey();
   
   // Drag and drop tracking for SLAP merge
   Slap? _draggingSlap;
-  Offset? _dragPosition;
+  Offset? _dragPosition; // In board-local coordinates
+  Offset? _dragStartOffset; // Offset from note origin to touch point
   Slap? _mergeTarget;
   
   // Animation for merge effect
@@ -56,46 +58,142 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     super.dispose();
   }
 
-  void _addSlap(Offset position) async {
-    HapticFeedback.lightImpact();
-    await ref.read(slapControllerProvider.notifier).createSlap(
-      boardId: widget.boardId,
-      x: position.dx,
-      y: position.dy,
+  // Board constants
+  static const double _boardWidth = 10000;
+  static const double _boardHeight = 10000;
+  static const double _noteWidth = 200;
+  static const double _noteHeight = 150;
+  static const double _padding = 20;
+
+  /// Zoom in by 20%
+  void _zoomIn() {
+    final currentScale = _transformController.value.getMaxScaleOnAxis();
+    final newScale = (currentScale * 1.2).clamp(0.1, 4.0);
+    _animateZoom(newScale);
+  }
+
+  /// Zoom out by 20%
+  void _zoomOut() {
+    final currentScale = _transformController.value.getMaxScaleOnAxis();
+    final newScale = (currentScale * 0.8).clamp(0.1, 4.0);
+    _animateZoom(newScale);
+  }
+
+  /// Animate zoom to target scale
+  void _animateZoom(double targetScale) {
+    final currentMatrix = _transformController.value;
+    final currentScale = currentMatrix.getMaxScaleOnAxis();
+    
+    // Scale from center of viewport
+    final viewportCenter = Offset(
+      MediaQuery.of(context).size.width / 2,
+      MediaQuery.of(context).size.height / 2,
+    );
+    
+    final scaleChange = targetScale / currentScale;
+    final newMatrix = currentMatrix.clone()
+      ..translate(viewportCenter.dx, viewportCenter.dy)
+      ..scale(scaleChange)
+      ..translate(-viewportCenter.dx, -viewportCenter.dy);
+    
+    _transformController.value = newMatrix;
+  }
+
+  /// Fit view to show all notes or center on board
+  void _fitToView() {
+    // Reset to show the initial area of the board
+    _transformController.value = Matrix4.identity()
+      ..translate(-100.0, -100.0); // Start with some padding
+  }
+
+  /// Constrain position to keep note within board bounds
+  Offset _constrainPosition(double x, double y) {
+    return Offset(
+      x.clamp(_padding, _boardWidth - _noteWidth - _padding),
+      y.clamp(_padding, _boardHeight - _noteHeight - _padding),
     );
   }
 
-  void _handleDragStart(Slap slap) {
+  void _addSlap(Offset position) async {
+    HapticFeedback.lightImpact();
+    // Constrain position to board bounds
+    final constrained = _constrainPosition(position.dx, position.dy);
+    await ref.read(slapControllerProvider.notifier).createSlap(
+      boardId: widget.boardId,
+      x: constrained.dx,
+      y: constrained.dy,
+    );
+  }
+
+  void _handleDragStart(Slap slap, Offset globalPosition) {
+    // Convert global position to board-local coordinates
+    final localPos = _globalToLocal(globalPosition);
+    // Calculate offset from note's top-left corner to touch point
+    final offsetFromNote = Offset(
+      localPos.dx - slap.positionX,
+      localPos.dy - slap.positionY,
+    );
     setState(() {
       _draggingSlap = slap;
+      _dragStartOffset = offsetFromNote;
+      _dragPosition = Offset(slap.positionX, slap.positionY);
     });
     HapticFeedback.selectionClick();
   }
 
-  void _handleDragUpdate(Offset position, List<Slap> allSlaps) {
+  /// Convert global screen coordinates to board-local coordinates
+  Offset _globalToLocal(Offset globalPosition) {
+    // Get the RenderBox for the board
+    final RenderBox? box = _boardKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return globalPosition;
+    
+    // Convert global to widget-local
+    final localPoint = box.globalToLocal(globalPosition);
+    
+    // Apply inverse of transform to get board coordinates
+    final matrix = _transformController.value;
+    final inverted = Matrix4.inverted(matrix);
+    final transformed = MatrixUtils.transformPoint(inverted, localPoint);
+    
+    return transformed;
+  }
+
+  void _handleDragUpdate(Offset globalPosition, List<Slap> allSlaps) {
+    // Convert global position to board-local coordinates
+    final localPos = _globalToLocal(globalPosition);
+    // Calculate note position by subtracting the initial offset
+    final notePos = Offset(
+      localPos.dx - (_dragStartOffset?.dx ?? 0),
+      localPos.dy - (_dragStartOffset?.dy ?? 0),
+    );
     setState(() {
-      _dragPosition = position;
-      // Check for potential merge target
-      _mergeTarget = _findMergeTarget(position, allSlaps);
+      _dragPosition = notePos;
+      // Check for potential merge target using the center of the note
+      final centerPos = Offset(notePos.dx + 100, notePos.dy + 75);
+      _mergeTarget = _findMergeTarget(centerPos, allSlaps);
     });
   }
 
-  void _handleDragEnd(Slap slap, Offset newPosition, List<Slap> allSlaps) async {
+  void _handleDragEnd(Slap slap, List<Slap> allSlaps) async {
+    final finalPosition = _dragPosition ?? Offset(slap.positionX, slap.positionY);
+    
     if (_mergeTarget != null && _mergeTarget!.id != slap.id) {
       // Perform SLAP merge!
       await _performMerge(slap, _mergeTarget!);
     } else {
-      // Just update position
+      // Constrain position to board bounds
+      final constrained = _constrainPosition(finalPosition.dx, finalPosition.dy);
       await ref.read(slapControllerProvider.notifier).updatePosition(
         slap.id,
-        newPosition.dx,
-        newPosition.dy,
+        constrained.dx,
+        constrained.dy,
       );
     }
 
     setState(() {
       _draggingSlap = null;
       _dragPosition = null;
+      _dragStartOffset = null;
       _mergeTarget = null;
     });
   }
@@ -476,34 +574,38 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                 ],
               ),
             ),
-            data: (slaps) => InteractiveViewer(
-              transformationController: _transformController,
-              boundaryMargin: const EdgeInsets.all(double.infinity),
-              minScale: 0.1,
-              maxScale: 4.0,
-              child: GestureDetector(
-                // Only create slap if double-tapping empty area (not on a note)
-                onDoubleTap: () {},
-                onDoubleTapDown: (details) {
-                  // Check if tap is on an existing slap
-                  final pos = details.localPosition;
-                  final onSlap = slaps.any((slap) {
-                    final slapRect = Rect.fromLTWH(
-                      slap.positionX,
-                      slap.positionY,
-                      200, // note width
-                      150, // note min height
-                    );
-                    return slapRect.contains(pos);
-                  });
-                  // Only create new slap if not tapping on existing one
-                  if (!onSlap) {
-                    _addSlap(pos);
-                  }
-                },
-                child: Container(
-                  width: 5000,
-                  height: 5000,
+            data: (slaps) => Container(
+              key: _boardKey,
+              child: InteractiveViewer(
+                transformationController: _transformController,
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                minScale: 0.1,
+                maxScale: 4.0,
+                constrained: false,
+                child: GestureDetector(
+                  // Only create slap if double-tapping empty area (not on a note)
+                  onDoubleTap: () {},
+                  onDoubleTapDown: (details) {
+                    // Check if tap is on an existing slap
+                    final pos = details.localPosition;
+                    final onSlap = slaps.any((slap) {
+                      final slapRect = Rect.fromLTWH(
+                        slap.positionX,
+                        slap.positionY,
+                        200, // note width
+                        150, // note min height
+                      );
+                      return slapRect.contains(pos);
+                    });
+                    // Only create new slap if not tapping on existing one
+                    if (!onSlap) {
+                      _addSlap(pos);
+                    }
+                  },
+                  child: Container(
+                  // Large board: ~10ft x 10ft equivalent for ample space
+                  width: _boardWidth,
+                  height: _boardHeight,
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
                   ),
@@ -542,9 +644,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                                   opacity: isDragging ? 0.5 : 1.0,
                                   child: StickyNoteEnhanced(
                                     slap: slap,
-                                    onDragStart: () => _handleDragStart(slap),
+                                    onDragStart: (globalPos) => _handleDragStart(slap, globalPos),
                                     onDragUpdate: (pos) => _handleDragUpdate(pos, slaps),
-                                    onDragEnd: (pos) => _handleDragEnd(slap, pos, slaps),
+                                    onDragEnd: () => _handleDragEnd(slap, slaps),
                                     onContentChanged: (content) {
                                       ref.read(slapControllerProvider.notifier)
                                           .updateContent(slap.id, content);
@@ -563,11 +665,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                           );
                         }),
                         
-                        // Drag indicator
+                        // Drag indicator (follows the note position)
                         if (_draggingSlap != null && _dragPosition != null)
                           Positioned(
-                            left: _dragPosition!.dx - 100,
-                            top: _dragPosition!.dy - 75,
+                            left: _dragPosition!.dx,
+                            top: _dragPosition!.dy,
                             child: IgnorePointer(
                               child: Container(
                                 width: 200,
@@ -628,9 +730,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
+              ), // GestureDetector
+            ), // InteractiveViewer
+          ), // Container with _boardKey
+          ), // slapsStream.when
 
           // Loading overlay during merge
           if (_isMerging)
@@ -685,18 +788,50 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final matrix = _transformController.value;
-          final offset = Offset(
-            -matrix.getTranslation().x / matrix.getMaxScaleOnAxis() + 200,
-            -matrix.getTranslation().y / matrix.getMaxScaleOnAxis() + 200,
-          );
-          _addSlap(offset);
-        },
-        backgroundColor: SlapColors.primary,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Zoom controls
+          FloatingActionButton.small(
+            heroTag: 'zoom_in',
+            onPressed: _zoomIn,
+            backgroundColor: Colors.white,
+            foregroundColor: SlapColors.primary,
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton.small(
+            heroTag: 'zoom_out',
+            onPressed: _zoomOut,
+            backgroundColor: Colors.white,
+            foregroundColor: SlapColors.primary,
+            child: const Icon(Icons.remove),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton.small(
+            heroTag: 'fit_view',
+            onPressed: _fitToView,
+            backgroundColor: Colors.white,
+            foregroundColor: SlapColors.primary,
+            child: const Icon(Icons.fit_screen),
+          ),
+          const SizedBox(height: 16),
+          // Add note button
+          FloatingActionButton(
+            heroTag: 'add_note',
+            onPressed: () {
+              final matrix = _transformController.value;
+              final offset = Offset(
+                -matrix.getTranslation().x / matrix.getMaxScaleOnAxis() + 200,
+                -matrix.getTranslation().y / matrix.getMaxScaleOnAxis() + 200,
+              );
+              _addSlap(offset);
+            },
+            backgroundColor: SlapColors.primary,
+            foregroundColor: Colors.white,
+            child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
@@ -815,6 +950,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
   bool _isInitialized = false;
   String _recognizedText = '';
   String _errorMessage = '';
+  String _statusMessage = '';
 
   @override
   void initState() {
@@ -823,31 +959,52 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
   }
 
   Future<void> _initializeSpeech() async {
+    setState(() {
+      _statusMessage = 'Initializing speech recognition...';
+    });
+    
     try {
       _isInitialized = await _speech.initialize(
         onStatus: (status) {
-          if (status == 'done' || status == 'notListening') {
-            if (mounted) {
-              setState(() => _isListening = false);
-            }
+          print('[Speech] Status: $status');
+          if (mounted) {
+            setState(() {
+              _statusMessage = 'Status: $status';
+              if (status == 'done' || status == 'notListening') {
+                _isListening = false;
+              }
+            });
           }
         },
         onError: (error) {
+          print('[Speech] Error: ${error.errorMsg}');
           if (mounted) {
             setState(() {
-              _errorMessage = error.errorMsg;
+              _errorMessage = 'Error: ${error.errorMsg}';
               _isListening = false;
             });
           }
         },
+        debugLogging: true, // Enable debug logging
       );
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
+      
+      print('[Speech] Initialized: $_isInitialized');
+      print('[Speech] Has permission: ${_speech.hasPermission}');
+      
       if (mounted) {
         setState(() {
-          _errorMessage = 'Could not initialize speech recognition: $e';
+          if (_isInitialized) {
+            _statusMessage = 'Ready! Tap the mic to start.';
+          } else {
+            _errorMessage = 'Speech recognition not available on this device/browser';
+          }
+        });
+      }
+    } catch (e) {
+      print('[Speech] Init exception: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Could not initialize: $e';
         });
       }
     }
@@ -856,7 +1013,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
   Future<void> _startListening() async {
     if (!_isInitialized) {
       setState(() {
-        _errorMessage = 'Speech recognition not available';
+        _errorMessage = 'Speech recognition not available. Try using Chrome browser.';
       });
       return;
     }
@@ -864,22 +1021,72 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
     setState(() {
       _recognizedText = '';
       _errorMessage = '';
+      _statusMessage = 'Starting...';
+      _isListening = true; // Set this early for UI feedback
     });
 
-    await _speech.listen(
-      onResult: (result) {
-        if (mounted) {
-          setState(() {
-            _recognizedText = result.recognizedWords;
-          });
+    try {
+      // Check available locales
+      final locales = await _speech.locales();
+      print('[Speech] Available locales: ${locales.map((l) => l.localeId).toList()}');
+      
+      // Find an English locale or use the system default
+      String? localeId;
+      for (final locale in locales) {
+        if (locale.localeId.startsWith('en')) {
+          localeId = locale.localeId;
+          break;
         }
-      },
-      listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 3),
-      localeId: 'en_US',
-    );
-
-    setState(() => _isListening = true);
+      }
+      localeId ??= locales.isNotEmpty ? locales.first.localeId : null;
+      
+      print('[Speech] Using locale: $localeId');
+      print('[Speech] isListening before: ${_speech.isListening}');
+      
+      await _speech.listen(
+        onResult: (result) {
+          print('[Speech] Result: ${result.recognizedWords} (final: ${result.finalResult})');
+          if (mounted) {
+            setState(() {
+              _recognizedText = result.recognizedWords;
+              _statusMessage = result.finalResult ? 'Done!' : 'Listening...';
+            });
+          }
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 5),
+        localeId: localeId,
+        onSoundLevelChange: (level) {
+          // This shows us the mic is working
+          print('[Speech] Sound level: $level');
+        },
+      );
+      
+      // Small delay to let speech recognition actually start
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      print('[Speech] isListening after: ${_speech.isListening}');
+      print('[Speech] isAvailable: ${_speech.isAvailable}');
+      
+      if (!_speech.isListening && mounted) {
+        setState(() {
+          _errorMessage = 'Speech recognition failed to start. Make sure microphone permissions are granted.';
+          _isListening = false;
+        });
+      } else if (mounted) {
+        setState(() {
+          _statusMessage = 'Listening... Speak now!';
+        });
+      }
+    } catch (e) {
+      print('[Speech] Listen exception: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to start: $e';
+          _isListening = false;
+        });
+      }
+    }
   }
 
   Future<void> _stopListening() async {
@@ -922,12 +1129,26 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the microphone to start speaking',
+            _isInitialized 
+                ? 'Tap the microphone to start speaking'
+                : 'Initializing...',
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.grey.shade600,
             ),
           ),
+          if (!_isInitialized && _errorMessage.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '(Works best in Chrome or Edge)',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey.shade400,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
           const SizedBox(height: 24),
           
           // Microphone button
@@ -959,9 +1180,23 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
           
           const SizedBox(height: 16),
           
+          // Status message
+          if (_statusMessage.isNotEmpty && !_isListening)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                _statusMessage,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.grey.shade600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          
           if (_isListening)
             Text(
-              'Listening...',
+              _statusMessage.isNotEmpty ? _statusMessage : 'Listening...',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: Colors.red,
@@ -977,10 +1212,17 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
                 color: Colors.red.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                _errorMessage,
-                style: TextStyle(color: Colors.red.shade700),
-                textAlign: TextAlign.center,
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage,
+                      style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

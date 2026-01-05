@@ -73,7 +73,9 @@ class SlapRepository {
 
   /// Delete a slap
   Future<void> deleteSlap(String slapId) async {
+    print('[SlapRepository] deleteSlap called with id: $slapId');
     await supabase.from('slaps').delete().eq('id', slapId);
+    print('[SlapRepository] deleteSlap completed');
   }
 
   /// Subscribe to realtime slap changes for a board
