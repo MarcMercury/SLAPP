@@ -14,6 +14,7 @@ class StickyNoteEnhanced extends StatefulWidget {
   final VoidCallback onColorTap;
   final VoidCallback onDelete;
   final VoidCallback onMicTap;
+  final VoidCallback? onSeparateTap; // Optional - only shown for merged notes
 
   const StickyNoteEnhanced({
     super.key,
@@ -25,6 +26,7 @@ class StickyNoteEnhanced extends StatefulWidget {
     required this.onColorTap,
     required this.onDelete,
     required this.onMicTap,
+    this.onSeparateTap,
   });
 
   @override
@@ -192,75 +194,111 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
       );
     }
 
-    // Build options menu - separate from gesture handling
-    Widget buildOptionsMenu() {
-      return Positioned(
-        top: -50,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildOptionButton(
-                    icon: Icons.edit,
-                    color: Colors.black54,
-                    label: 'Edit',
-                    onTap: () {
-                      setState(() => _showOptions = false);
-                      _startEditing();
-                    },
-                  ),
-                  _buildOptionButton(
-                    icon: Icons.mic,
-                    color: SlapColors.primary,
-                    label: 'Voice',
-                    onTap: () {
-                      setState(() => _showOptions = false);
-                      widget.onMicTap();
-                    },
-                  ),
-                  _buildOptionButton(
-                    icon: Icons.palette,
-                    color: Colors.black54,
-                    label: 'Color',
-                    onTap: () {
-                      setState(() => _showOptions = false);
-                      widget.onColorTap();
-                    },
-                  ),
-                  _buildOptionButton(
-                    icon: Icons.delete,
-                    color: SlapColors.error,
-                    label: 'Delete',
-                    onTap: () {
-                      setState(() => _showOptions = false);
-                      widget.onDelete();
-                    },
-                  ),
-                ],
+    // Main widget structure with proper gesture isolation
+    // When options are shown, we need a larger hit test area
+    if (_showOptions) {
+      return SizedBox(
+        width: 320, // 200 + 60 on each side
+        height: 220, // 150 + 70 for menu
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // The draggable/tappable note - positioned to account for menu space
+            Positioned(
+              top: 70, // Space for menu above
+              left: 60, // Space on left
+              child: IgnorePointer(
+                ignoring: true,
+                child: buildMainNote(),
               ),
             ),
-          ),
+            
+            // Options menu - rendered on top, positioned at top center
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {}, // Capture taps to prevent closing
+                  child: Material(
+                    elevation: 8,
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildOptionButton(
+                            icon: Icons.edit,
+                            color: Colors.black87,
+                            label: 'Edit',
+                            onTap: () {
+                              setState(() => _showOptions = false);
+                              _startEditing();
+                            },
+                          ),
+                          _buildOptionButton(
+                            icon: Icons.mic,
+                            color: SlapColors.primary,
+                            label: 'Voice',
+                            onTap: () {
+                              setState(() => _showOptions = false);
+                              widget.onMicTap();
+                            },
+                          ),
+                          _buildOptionButton(
+                            icon: Icons.palette,
+                            color: Colors.orange,
+                            label: 'Color',
+                            onTap: () {
+                              setState(() => _showOptions = false);
+                              widget.onColorTap();
+                            },
+                          ),
+                          // Show Separate button only for merged notes
+                          if (widget.slap.isMerged && widget.onSeparateTap != null)
+                            _buildOptionButton(
+                              icon: Icons.call_split,
+                              color: Colors.blue,
+                              label: 'Split',
+                              onTap: () {
+                                setState(() => _showOptions = false);
+                                widget.onSeparateTap!();
+                              },
+                            ),
+                          _buildOptionButton(
+                            icon: Icons.delete,
+                            color: SlapColors.error,
+                            label: 'Delete',
+                            onTap: () {
+                              setState(() => _showOptions = false);
+                              widget.onDelete();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Tap anywhere else to close
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => setState(() => _showOptions = false),
+              ),
+            ),
+          ],
         ),
       );
     }
-
-    // Main widget structure with proper gesture isolation
+    
+    // Normal state without options
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -296,9 +334,6 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
             child: buildMainNote(),
           ),
         ),
-        
-        // Options menu - OUTSIDE of GestureDetector so taps work!
-        if (_showOptions) buildOptionsMenu(),
       ],
     );
   }
@@ -309,22 +344,26 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
     required String label,
     required VoidCallback onTap,
   }) {
+    // Use InkWell for proper tap handling
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(8),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(height: 2),
+            Icon(icon, size: 22, color: color),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 color: color,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],

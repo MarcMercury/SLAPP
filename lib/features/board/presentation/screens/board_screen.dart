@@ -363,6 +363,61 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     );
   }
 
+  Future<void> _separateSlap(Slap slap) async {
+    // Show confirmation dialog
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Separate Notes?'),
+        content: const Text(
+          'This will split this merged note back into its original separate notes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: SlapColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Separate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    HapticFeedback.mediumImpact();
+
+    final separatedSlaps = await ref
+        .read(slapControllerProvider.notifier)
+        .separateSlap(slap);
+
+    // Force refresh
+    ref.invalidate(slapsStreamProvider(widget.boardId));
+
+    if (separatedSlaps != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.call_split, color: Colors.white),
+              const SizedBox(width: 12),
+              Text('Split into ${separatedSlaps.length} notes'),
+            ],
+          ),
+          backgroundColor: SlapColors.success,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final boardAsync = ref.watch(boardProvider(widget.boardId));
@@ -496,6 +551,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                                     },
                                     onColorTap: () => _showColorPicker(slap),
                                     onMicTap: () => _showVoiceRecorder(slap),
+                                    onSeparateTap: slap.isMerged ? () => _separateSlap(slap) : null,
                                     onDelete: () {
                                       ref.read(slapControllerProvider.notifier)
                                           .deleteSlap(slap.id);

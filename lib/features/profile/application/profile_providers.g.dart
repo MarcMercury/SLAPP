@@ -45,6 +45,26 @@ final currentProfileProvider = AutoDisposeFutureProvider<Profile?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentProfileRef = AutoDisposeFutureProviderRef<Profile?>;
+String _$userActivityStatsHash() => r'21ac75fb4d17f5964118479491e599d8af84e0d7';
+
+/// Provider for user activity stats
+///
+/// Copied from [userActivityStats].
+@ProviderFor(userActivityStats)
+final userActivityStatsProvider =
+    AutoDisposeFutureProvider<Map<String, int>>.internal(
+  userActivityStats,
+  name: r'userActivityStatsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$userActivityStatsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef UserActivityStatsRef = AutoDisposeFutureProviderRef<Map<String, int>>;
 String _$profileControllerHash() => r'c40048246b16d10e13668936e627491d6ad47757';
 
 /// Controller for profile operations

@@ -226,7 +226,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         
                         // Stats Section
                         if (!_isEditing) ...[
-                          _buildStatsSection(),
+                          _buildActivitySection(),
                           const SizedBox(height: 32),
                         ],
                         
@@ -545,7 +545,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  Widget _buildStatsSection() {
+  Widget _buildActivitySection() {
+    final activityAsync = ref.watch(userActivityStatsProvider);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -587,35 +589,73 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                  icon: Icons.dashboard,
-                  label: 'Boards',
-                  value: '—',
-                  color: SlapColors.secondary,
-                ),
+          activityAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatItem(
-                  icon: Icons.sticky_note_2,
-                  label: 'Slaps',
-                  value: '—',
-                  color: SlapColors.primary,
+            ),
+            error: (_, __) => Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    icon: Icons.dashboard,
+                    label: 'Boards',
+                    value: '—',
+                    color: SlapColors.secondary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatItem(
-                  icon: Icons.merge,
-                  label: 'Merges',
-                  value: '—',
-                  color: SlapColors.success,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatItem(
+                    icon: Icons.sticky_note_2,
+                    label: 'Slaps',
+                    value: '—',
+                    color: SlapColors.primary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatItem(
+                    icon: Icons.merge,
+                    label: 'Merges',
+                    value: '—',
+                    color: SlapColors.success,
+                  ),
+                ),
+              ],
+            ),
+            data: (stats) => Row(
+              children: [
+                Expanded(
+                  child: _buildStatItem(
+                    icon: Icons.dashboard,
+                    label: 'Boards',
+                    value: '${stats['boards'] ?? 0}',
+                    color: SlapColors.secondary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatItem(
+                    icon: Icons.sticky_note_2,
+                    label: 'Slaps',
+                    value: '${stats['slaps'] ?? 0}',
+                    color: SlapColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatItem(
+                    icon: Icons.merge,
+                    label: 'Merges',
+                    value: '${stats['merges'] ?? 0}',
+                    color: SlapColors.success,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

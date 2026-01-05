@@ -32,42 +32,39 @@ class BoardController extends _$BoardController {
 
   /// Create a new board
   Future<Board?> createBoard(String name) async {
-    state = const AsyncLoading();
     try {
       final repository = ref.read(boardRepositoryProvider);
       final board = await repository.createBoard(name);
       // Invalidate boards list to refresh
       ref.invalidate(boardsProvider);
-      state = const AsyncData(null);
       return board;
-    } catch (e, st) {
-      state = AsyncError(e, st);
-      return null;
+    } catch (e) {
+      // Log error but don't update state to avoid "Future already completed"
+      print('[BoardController] createBoard error: $e');
+      rethrow;
     }
   }
 
   /// Delete a board
   Future<void> deleteBoard(String boardId) async {
-    state = const AsyncLoading();
     try {
       final repository = ref.read(boardRepositoryProvider);
       await repository.deleteBoard(boardId);
       ref.invalidate(boardsProvider);
-      state = const AsyncData(null);
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    } catch (e) {
+      print('[BoardController] deleteBoard error: $e');
+      rethrow;
     }
   }
 
   /// Invite a member to a board
   Future<void> inviteMember(String boardId, String phoneNumber) async {
-    state = const AsyncLoading();
     try {
       final repository = ref.read(boardRepositoryProvider);
       await repository.inviteMember(boardId, phoneNumber);
-      state = const AsyncData(null);
-    } catch (e, st) {
-      state = AsyncError(e, st);
+    } catch (e) {
+      print('[BoardController] inviteMember error: $e');
+      rethrow;
     }
   }
 }

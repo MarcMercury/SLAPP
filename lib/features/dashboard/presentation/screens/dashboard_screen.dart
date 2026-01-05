@@ -8,6 +8,7 @@ import 'package:slapp/core/widgets/welcome_dialog.dart';
 import 'package:slapp/features/auth/application/auth_providers.dart';
 import 'package:slapp/features/board/application/board_providers.dart';
 import 'package:slapp/features/board/data/models/board_model.dart';
+import 'package:slapp/features/profile/application/profile_providers.dart';
 
 /// Dashboard screen showing list of boards with branded UI
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -55,9 +56,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   void _createBoard() {
     final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -73,36 +76,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             const Text('New Board'),
           ],
         ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            labelText: 'Board Name',
-            hintText: 'e.g., Project Ideas',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter a board name';
+              }
+              return null;
+            },
+            decoration: InputDecoration(
+              labelText: 'Board Name',
+              hintText: 'e.g., Project Ideas',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              filled: true,
             ),
-            filled: true,
+            onFieldSubmitted: (_) => _submitCreateBoard(formKey, controller, dialogContext),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () async {
-              final name = controller.text.trim();
-              if (name.isNotEmpty) {
-                Navigator.pop(context);
-                final board = await ref
-                    .read(boardControllerProvider.notifier)
-                    .createBoard(name);
-                if (board != null && mounted) {
-                  context.go('/board/${board.id}');
-                }
-              }
-            },
+            onPressed: () => _submitCreateBoard(formKey, controller, dialogContext),
             style: FilledButton.styleFrom(
               backgroundColor: SlapColors.primary,
             ),
@@ -113,8 +115,89 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     );
   }
 
+  Future<void> _submitCreateBoard(
+    GlobalKey<FormState> formKey,
+    TextEditingController controller,
+    BuildContext dialogContext,
+  ) async {
+    if (!formKey.currentState!.validate()) return;
+    
+    final name = controller.text.trim();
+    Navigator.of(dialogContext).pop();
+    
+    try {
+      final board = await ref
+          .read(boardControllerProvider.notifier)
+          .createBoard(name);
+      
+      if (board != null && mounted) {
+        context.go('/board/${board.id}');
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to create board'),
+            backgroundColor: SlapColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: SlapColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   void _showProfile() {
     context.go('/profile');
+  }
+
+  Widget _buildProfileButton() {
+    final profileAsync = ref.watch(profileControllerProvider);
+    
+    return IconButton(
+      onPressed: _showProfile,
+      icon: profileAsync.when(
+        loading: () => CircleAvatar(
+          radius: 20,
+          backgroundColor: SlapColors.primary.withOpacity(0.1),
+          child: const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+        error: (_, __) => CircleAvatar(
+          radius: 20,
+          backgroundColor: SlapColors.primary.withOpacity(0.1),
+          child: const Icon(Icons.person, color: SlapColors.primary),
+        ),
+        data: (profile) {
+          final avatar = profile?.avatarUrl;
+          if (avatar != null && avatar.isNotEmpty) {
+            return CircleAvatar(
+              radius: 20,
+              backgroundColor: SlapColors.primary.withOpacity(0.1),
+              child: Text(
+                avatar,
+                style: const TextStyle(fontSize: 24),
+              ),
+            );
+          }
+          return CircleAvatar(
+            radius: 20,
+            backgroundColor: SlapColors.primary.withOpacity(0.1),
+            child: const Icon(Icons.person, color: SlapColors.primary),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -136,14 +219,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   children: [
                     const SlapLogo(size: 40),
                     const Spacer(),
-                    IconButton(
-                      onPressed: _showProfile,
-                      icon: CircleAvatar(
-                        radius: 20,
-                        backgroundColor: SlapColors.primary.withOpacity(0.1),
-                        child: const Icon(Icons.person, color: SlapColors.primary),
-                      ),
-                    ),
+                    _buildProfileButton(),
                   ],
                 ),
               ),

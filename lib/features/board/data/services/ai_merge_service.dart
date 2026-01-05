@@ -2,77 +2,59 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:slapp/core/env/env.dart';
 
-/// Service for AI-powered slap merging using OpenAI
+/// Service for AI-powered slap merging using Supabase Edge Function
 class AiMergeService {
-  static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
-
-  /// Merge two ideas using AI
+  /// Merge two ideas using AI via Supabase Edge Function
   Future<String> mergeIdeas(String idea1, String idea2) async {
-    final apiKey = Env.openaiApiKey;
-    if (apiKey.isEmpty) {
-      // Fallback to simple concatenation if no API key
-      return _simpleMerge(idea1, idea2);
-    }
-
     try {
+      // Call Supabase Edge Function to avoid CORS issues
       final response = await http.post(
-        Uri.parse(_baseUrl),
+        Uri.parse('${Env.supabaseUrl}/functions/v1/merge-ideas'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
+          'Authorization': 'Bearer ${Env.supabaseAnonKey}',
         },
         body: jsonEncode({
-          'model': 'gpt-4o-mini',
-          'messages': [
-            {
-              'role': 'system',
-              'content': '''You are an idea synthesis assistant for a collaborative brainstorming app called SLAP. 
-When users drag sticky notes on top of each other (a "SLAP"), you merge their ideas into something new and creative.
-
-Rules:
-- Create a single, concise merged idea (max 2-3 sentences)
-- Combine the essence of both ideas creatively
-- The result should feel like a natural evolution or synthesis
-- Keep it actionable and inspiring
-- Don't just concatenate - truly integrate the concepts'''
-            },
-            {
-              'role': 'user',
-              'content': '''SLAP! These two ideas have been combined:
-
-Idea 1: "$idea1"
-
-Idea 2: "$idea2"
-
-Create a merged idea that synthesizes both:'''
-            }
-          ],
-          'max_tokens': 150,
-          'temperature': 0.8,
+          'idea1': idea1,
+          'idea2': idea2,
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'] as String;
-        return content.trim();
+        return data['merged'] as String? ?? _simpleMerge(idea1, idea2);
       } else {
         // Fallback on API error
+        print('[AiMergeService] Edge function error: ${response.statusCode} - ${response.body}');
         return _simpleMerge(idea1, idea2);
       }
     } catch (e) {
       // Fallback on any error
+      print('[AiMergeService] Error: $e');
       return _simpleMerge(idea1, idea2);
     }
   }
 
   /// Simple fallback merge without AI
+  /// Creates a more synthesized-looking output
   String _simpleMerge(String idea1, String idea2) {
     if (idea1.isEmpty && idea2.isEmpty) {
       return 'Combined idea';
     }
     if (idea1.isEmpty) return idea2;
     if (idea2.isEmpty) return idea1;
-    return '💡 $idea1 + $idea2';
+    
+    // Create a more thoughtful combination
+    // Remove common filler words and combine meaningfully
+    final clean1 = idea1.trim();
+    final clean2 = idea2.trim();
+    
+    // Check if ideas are short (single words or phrases)
+    if (clean1.split(' ').length <= 3 && clean2.split(' ').length <= 3) {
+      return '💡 Combine "$clean1" with "$clean2" - explore how these concepts work together';
+    }
+    
+    // For longer ideas, create a synthesis prompt
+    return '✨ Synthesis: $clean1\n\n↔️ Connected with: $clean2\n\n💭 Consider how these ideas reinforce or complement each other.';
   }
 }

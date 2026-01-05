@@ -9,6 +9,7 @@ class Slap {
   final String color;
   final bool isProcessing;
   final DateTime createdAt;
+  final List<Map<String, dynamic>>? mergedFrom; // Stores original notes data for separation
 
   Slap({
     required this.id,
@@ -20,9 +21,20 @@ class Slap {
     this.color = 'FFFFE0',
     this.isProcessing = false,
     required this.createdAt,
+    this.mergedFrom,
   });
 
+  /// Check if this note was created from a merge
+  bool get isMerged => mergedFrom != null && mergedFrom!.isNotEmpty;
+
   factory Slap.fromJson(Map<String, dynamic> json) {
+    List<Map<String, dynamic>>? mergedFrom;
+    if (json['merged_from'] != null) {
+      mergedFrom = (json['merged_from'] as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    }
+    
     return Slap(
       id: json['id'] as String,
       boardId: json['board_id'] as String,
@@ -35,6 +47,7 @@ class Slap {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
+      mergedFrom: mergedFrom,
     );
   }
 
@@ -49,6 +62,7 @@ class Slap {
       'color': color,
       'is_processing': isProcessing,
       'created_at': createdAt.toIso8601String(),
+      'merged_from': mergedFrom,
     };
   }
 
@@ -62,6 +76,7 @@ class Slap {
       'position_y': positionY,
       'color': color,
       'is_processing': isProcessing,
+      'merged_from': mergedFrom,
     };
   }
 
@@ -75,6 +90,7 @@ class Slap {
     String? color,
     bool? isProcessing,
     DateTime? createdAt,
+    List<Map<String, dynamic>>? mergedFrom,
   }) {
     return Slap(
       id: id ?? this.id,
@@ -86,6 +102,7 @@ class Slap {
       color: color ?? this.color,
       isProcessing: isProcessing ?? this.isProcessing,
       createdAt: createdAt ?? this.createdAt,
+      mergedFrom: mergedFrom ?? this.mergedFrom,
     );
   }
 

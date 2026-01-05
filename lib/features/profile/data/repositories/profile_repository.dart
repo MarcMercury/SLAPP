@@ -89,4 +89,42 @@ class ProfileRepository {
 
     return (response as List).map((json) => Profile.fromJson(json)).toList();
   }
+
+  /// Get user activity stats (boards, slaps, merges)
+  Future<Map<String, int>> getUserActivityStats() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return {'boards': 0, 'slaps': 0, 'merges': 0};
+
+    try {
+      // Get board count - boards where user is creator
+      final boardsResponse = await supabase
+          .from('boards')
+          .select('id')
+          .eq('created_by', userId);
+      final boardCount = (boardsResponse as List).length;
+
+      // Get slaps count - all slaps created by user
+      final slapsResponse = await supabase
+          .from('slaps')
+          .select('id')
+          .eq('user_id', userId);
+      final slapCount = (slapsResponse as List).length;
+
+      // Get merge count - slaps with merged_from not null
+      final mergesResponse = await supabase
+          .from('slaps')
+          .select('id')
+          .eq('user_id', userId)
+          .not('merged_from', 'is', null);
+      final mergeCount = (mergesResponse as List).length;
+
+      return {
+        'boards': boardCount,
+        'slaps': slapCount,
+        'merges': mergeCount,
+      };
+    } catch (e) {
+      return {'boards': 0, 'slaps': 0, 'merges': 0};
+    }
+  }
 }

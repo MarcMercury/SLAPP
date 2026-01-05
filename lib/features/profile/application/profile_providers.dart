@@ -18,6 +18,13 @@ Future<Profile?> currentProfile(Ref ref) async {
   return repo.getCurrentProfile();
 }
 
+/// Provider for user activity stats
+@riverpod
+Future<Map<String, int>> userActivityStats(Ref ref) async {
+  final repo = ref.watch(profileRepositoryProvider);
+  return repo.getUserActivityStats();
+}
+
 /// Controller for profile operations
 @riverpod
 class ProfileController extends _$ProfileController {

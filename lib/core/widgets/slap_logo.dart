@@ -6,11 +6,13 @@ import 'package:slapp/core/theme/slap_colors.dart';
 class SlapLogo extends StatelessWidget {
   final double size;
   final bool showTagline;
+  final bool iconOnly;
 
   const SlapLogo({
     super.key,
     this.size = 48,
     this.showTagline = false,
+    this.iconOnly = false,
   });
 
   @override
@@ -18,16 +20,15 @@ class SlapLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Logo with hand slap icon
+        // Logo with image from assets
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Hand icon representing "slap"
+            // Logo image from assets
             Container(
               width: size,
               height: size,
               decoration: BoxDecoration(
-                color: SlapColors.primary,
                 borderRadius: BorderRadius.circular(size * 0.2),
                 boxShadow: [
                   BoxShadow(
@@ -37,25 +38,47 @@ class SlapLogo extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.back_hand,
-                color: Colors.white,
-                size: size * 0.6,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(size * 0.2),
+                child: Image.asset(
+                  'assets/images/slap_logo.png',
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    // Fallback to icon if image fails to load
+                    return Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        color: SlapColors.primary,
+                        borderRadius: BorderRadius.circular(size * 0.2),
+                      ),
+                      child: Icon(
+                        Icons.sticky_note_2,
+                        color: Colors.white,
+                        size: size * 0.6,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-            SizedBox(width: size * 0.25),
-            // SLAP text
-            Text(
-              'SLAP',
-              style: GoogleFonts.fredoka(
-                fontSize: size * 0.9,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : SlapColors.secondary,
-                letterSpacing: 2,
+            if (!iconOnly) ...[
+              SizedBox(width: size * 0.25),
+              // SLAP text
+              Text(
+                'SLAP',
+                style: GoogleFonts.fredoka(
+                  fontSize: size * 0.9,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : SlapColors.secondary,
+                  letterSpacing: 2,
+                ),
               ),
-            ),
+            ],
           ],
         ),
         if (showTagline) ...[

@@ -99,13 +99,29 @@ class SlapRepository {
     final centerX = (slap1.positionX + slap2.positionX) / 2;
     final centerY = (slap1.positionY + slap2.positionY) / 2;
 
+    // Store original slap data for potential separation later
+    final mergedFrom = [
+      {
+        'content': slap1.content,
+        'color': slap1.color,
+        'position_x': slap1.positionX,
+        'position_y': slap1.positionY,
+      },
+      {
+        'content': slap2.content,
+        'color': slap2.color,
+        'position_x': slap2.positionX,
+        'position_y': slap2.positionY,
+      },
+    ];
+
     // Delete both original slaps
     await Future.wait([
       deleteSlap(slap1.id),
       deleteSlap(slap2.id),
     ]);
 
-    // Create new merged slap
+    // Create new merged slap with original data stored
     final response = await supabase
         .from('slaps')
         .insert({
@@ -115,10 +131,50 @@ class SlapRepository {
           'position_x': centerX,
           'position_y': centerY,
           'color': 'FFD166', // Use accent color for merged slaps
+          'merged_from': mergedFrom,
         })
         .select()
         .single();
 
     return Slap.fromJson(response);
+  }
+
+  /// Separate a merged slap back into its original notes
+  Future<List<Slap>> separateSlap(Slap mergedSlap) async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not authenticated');
+    if (mergedSlap.mergedFrom == null || mergedSlap.mergedFrom!.isEmpty) {
+      throw Exception('This note was not merged and cannot be separated');
+    }
+
+    final separatedSlaps = <Slap>[];
+    
+    // Recreate original slaps with slight offset
+    for (var i = 0; i < mergedSlap.mergedFrom!.length; i++) {
+      final original = mergedSlap.mergedFrom![i];
+      final offsetX = (i == 0) ? -30.0 : 30.0; // Offset left and right
+      
+      final response = await supabase
+          .from('slaps')
+          .insert({
+            'board_id': mergedSlap.boardId,
+            'user_id': userId,
+            'content': original['content'] ?? '',
+            'position_x': (original['position_x'] as num?)?.toDouble() ?? 
+                          mergedSlap.positionX + offsetX,
+            'position_y': (original['position_y'] as num?)?.toDouble() ?? 
+                          mergedSlap.positionY,
+            'color': original['color'] ?? 'FFFFE0',
+          })
+          .select()
+          .single();
+      
+      separatedSlaps.add(Slap.fromJson(response));
+    }
+
+    // Delete the merged slap
+    await deleteSlap(mergedSlap.id);
+
+    return separatedSlaps;
   }
 }

@@ -39,7 +39,7 @@ class BoardRepository {
     return Board.fromJson(response);
   }
 
-  /// Create a new board
+  /// Create a new board using SECURITY DEFINER function
   Future<Board> createBoard(String name) async {
     final userId = supabase.auth.currentUser?.id;
     print('[BoardRepository] createBoard called, userId: $userId');
@@ -50,17 +50,12 @@ class BoardRepository {
     }
 
     try {
+      // Use RPC function to create board with member in single transaction
       final response = await supabase
-          .from('boards')
-          .insert({
-            'name': name,
-            'created_by': userId,
-          })
-          .select()
-          .single();
+          .rpc('create_board_with_member', params: {'board_name': name});
       
       print('[BoardRepository] Board created: ${response['id']}');
-      return Board.fromJson(response);
+      return Board.fromJson(response as Map<String, dynamic>);
     } catch (e) {
       print('[BoardRepository] ERROR creating board: $e');
       rethrow;

@@ -127,4 +127,22 @@ class SlapController extends _$SlapController {
       return null;
     }
   }
+
+  /// Separate a merged slap back into its original notes
+  Future<List<Slap>?> separateSlap(Slap mergedSlap) async {
+    try {
+      final repository = ref.read(slapRepositoryProvider);
+      
+      // Set to processing
+      await repository.setProcessing(mergedSlap.id, true);
+      
+      // Separate the slap
+      return await repository.separateSlap(mergedSlap);
+    } catch (e) {
+      // Reset processing state on error
+      final repository = ref.read(slapRepositoryProvider);
+      await repository.setProcessing(mergedSlap.id, false);
+      return null;
+    }
+  }
 }

@@ -18,23 +18,43 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="SLAP - Ideas that stick together">
+  
+  <!-- Viewport settings to prevent zoom issues on mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="slapp">
+  <meta name="apple-mobile-web-app-title" content="SLAP">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>slapp</title>
+  <title>SLAP - Ideas that stick together</title>
   <!-- Disabled manifest for Codespaces compatibility -->
   <!-- <link rel="manifest" href="manifest.json"> -->
+  
+  <!-- Prevent touch callout and text selection on mobile -->
+  <style>
+    html, body {
+      touch-action: pan-x pan-y;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      overscroll-behavior: none;
+      overflow: hidden;
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- Cache-busting version parameter -->
+  <script src="flutter_bootstrap.js?v=20260105e" async></script>
 </body>
 </html>

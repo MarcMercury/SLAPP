@@ -207,7 +207,7 @@ class _SlapsStreamProviderElement
   String get boardId => (origin as SlapsStreamProvider).boardId;
 }
 
-String _$slapControllerHash() => r'9c7c00a028242daa34f5c182b2b07681d3e9ff01';
+String _$slapControllerHash() => r'e3d8f4e6672aa377463ce1fcd0241416db27afd5';
 
 /// Controller for slap operations
 ///
