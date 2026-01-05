@@ -42,18 +42,29 @@ class BoardRepository {
   /// Create a new board
   Future<Board> createBoard(String name) async {
     final userId = supabase.auth.currentUser?.id;
-    if (userId == null) throw Exception('User not authenticated');
+    print('[BoardRepository] createBoard called, userId: $userId');
+    
+    if (userId == null) {
+      print('[BoardRepository] ERROR: User not authenticated');
+      throw Exception('User not authenticated');
+    }
 
-    final response = await supabase
-        .from('boards')
-        .insert({
-          'name': name,
-          'created_by': userId,
-        })
-        .select()
-        .single();
-
-    return Board.fromJson(response);
+    try {
+      final response = await supabase
+          .from('boards')
+          .insert({
+            'name': name,
+            'created_by': userId,
+          })
+          .select()
+          .single();
+      
+      print('[BoardRepository] Board created: ${response['id']}');
+      return Board.fromJson(response);
+    } catch (e) {
+      print('[BoardRepository] ERROR creating board: $e');
+      rethrow;
+    }
   }
 
   /// Update a board

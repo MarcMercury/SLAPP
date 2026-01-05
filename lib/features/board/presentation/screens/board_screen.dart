@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:slapp/core/theme/slap_colors.dart';
 import 'package:slapp/features/board/application/board_providers.dart';
 import 'package:slapp/features/board/application/slap_providers.dart';
@@ -131,6 +132,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
       source,
       target,
     );
+
+    // Force refresh the slaps stream to remove deleted slaps
+    ref.invalidate(slapsStreamProvider(widget.boardId));
 
     if (mergedSlap != null && mounted) {
       // Show success feedback
@@ -336,6 +340,29 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     );
   }
 
+  void _showVoiceRecorder(Slap slap) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => _VoiceRecorderSheet(
+        slap: slap,
+        onTextRecorded: (text) {
+          // Append recorded text to existing content
+          final newContent = slap.content.isEmpty 
+              ? text 
+              : '${slap.content}\n$text';
+          ref.read(slapControllerProvider.notifier).updateContent(
+            slap.id,
+            newContent,
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final boardAsync = ref.watch(boardProvider(widget.boardId));
@@ -400,7 +427,25 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
               minScale: 0.1,
               maxScale: 4.0,
               child: GestureDetector(
-                onDoubleTapDown: (details) => _addSlap(details.localPosition),
+                // Only create slap if double-tapping empty area (not on a note)
+                onDoubleTap: () {},
+                onDoubleTapDown: (details) {
+                  // Check if tap is on an existing slap
+                  final pos = details.localPosition;
+                  final onSlap = slaps.any((slap) {
+                    final slapRect = Rect.fromLTWH(
+                      slap.positionX,
+                      slap.positionY,
+                      200, // note width
+                      150, // note min height
+                    );
+                    return slapRect.contains(pos);
+                  });
+                  // Only create new slap if not tapping on existing one
+                  if (!onSlap) {
+                    _addSlap(pos);
+                  }
+                },
                 child: Container(
                   width: 5000,
                   height: 5000,
@@ -450,6 +495,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                                           .updateContent(slap.id, content);
                                     },
                                     onColorTap: () => _showColorPicker(slap),
+                                    onMicTap: () => _showVoiceRecorder(slap),
                                     onDelete: () {
                                       ref.read(slapControllerProvider.notifier)
                                           .deleteSlap(slap.id);
@@ -687,6 +733,258 @@ class _BoardOptionsSheet extends StatelessWidget {
             onTap: onDelete,
           ),
           const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// Voice recorder bottom sheet for speech-to-text
+class _VoiceRecorderSheet extends StatefulWidget {
+  final Slap slap;
+  final Function(String) onTextRecorded;
+
+  const _VoiceRecorderSheet({
+    required this.slap,
+    required this.onTextRecorded,
+  });
+
+  @override
+  State<_VoiceRecorderSheet> createState() => _VoiceRecorderSheetState();
+}
+
+class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  bool _isInitialized = false;
+  String _recognizedText = '';
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeSpeech();
+  }
+
+  Future<void> _initializeSpeech() async {
+    try {
+      _isInitialized = await _speech.initialize(
+        onStatus: (status) {
+          if (status == 'done' || status == 'notListening') {
+            if (mounted) {
+              setState(() => _isListening = false);
+            }
+          }
+        },
+        onError: (error) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = error.errorMsg;
+              _isListening = false;
+            });
+          }
+        },
+      );
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Could not initialize speech recognition: $e';
+        });
+      }
+    }
+  }
+
+  Future<void> _startListening() async {
+    if (!_isInitialized) {
+      setState(() {
+        _errorMessage = 'Speech recognition not available';
+      });
+      return;
+    }
+
+    setState(() {
+      _recognizedText = '';
+      _errorMessage = '';
+    });
+
+    await _speech.listen(
+      onResult: (result) {
+        if (mounted) {
+          setState(() {
+            _recognizedText = result.recognizedWords;
+          });
+        }
+      },
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 3),
+      localeId: 'en_US',
+    );
+
+    setState(() => _isListening = true);
+  }
+
+  Future<void> _stopListening() async {
+    await _speech.stop();
+    setState(() => _isListening = false);
+  }
+
+  void _saveText() {
+    if (_recognizedText.isNotEmpty) {
+      widget.onTextRecorded(_recognizedText);
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added: "$_recognizedText"'),
+          backgroundColor: SlapColors.success,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _speech.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Voice Recording',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap the microphone to start speaking',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+          const SizedBox(height: 24),
+          
+          // Microphone button
+          GestureDetector(
+            onTap: _isListening ? _stopListening : _startListening,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: _isListening ? 100 : 80,
+              height: _isListening ? 100 : 80,
+              decoration: BoxDecoration(
+                color: _isListening ? Colors.red : SlapColors.primary,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: (_isListening ? Colors.red : SlapColors.primary)
+                        .withOpacity(0.4),
+                    blurRadius: _isListening ? 20 : 10,
+                    spreadRadius: _isListening ? 5 : 0,
+                  ),
+                ],
+              ),
+              child: Icon(
+                _isListening ? Icons.stop : Icons.mic,
+                color: Colors.white,
+                size: 40,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          if (_isListening)
+            Text(
+              'Listening...',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          
+          if (_errorMessage.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _errorMessage,
+                style: TextStyle(color: Colors.red.shade700),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+          
+          if (_recognizedText.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recognized Text:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _recognizedText,
+                    style: GoogleFonts.poppins(fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      setState(() => _recognizedText = '');
+                    },
+                    child: const Text('Clear'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _saveText,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: SlapColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Add to Note'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          
+          const SizedBox(height: 24),
         ],
       ),
     );
