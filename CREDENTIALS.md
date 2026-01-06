@@ -4,6 +4,17 @@
 # KEEP THIS FILE - Reference it for ALL future operations.
 # Last Updated: January 5, 2026
 
+## APP IDENTIFIERS
+ANDROID_PACKAGE_ID=fun.slapp.slapp
+IOS_BUNDLE_ID=fun.slapp.slapp
+WEB_DOMAIN=slapp.fun
+
+## ANDROID KEYSTORE (For Play Store Signing)
+KEYSTORE_FILE=android/app/slapp-release.keystore
+KEYSTORE_ALIAS=slapp
+KEYSTORE_PASSWORD=slapp2026secure
+KEY_PASSWORD=slapp2026secure
+
 ## SUPABASE
 SUPABASE_URL=https://spdqigbohimluzghlwjb.supabase.co
 SUPABASE_PROJECT_REF=spdqigbohimluzghlwjb

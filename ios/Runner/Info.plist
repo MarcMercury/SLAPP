@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Slapp</string>
+	<string>SLAPP</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>slapp</string>
+	<string>SLAPP</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Microphone permission for speech-to-text -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SLAPP needs microphone access to convert your voice to text on sticky notes.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>SLAPP uses speech recognition to convert your voice into text on sticky notes.</string>
 </dict>
 </plist>

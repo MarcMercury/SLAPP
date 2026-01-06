@@ -33,6 +33,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   Offset? _dragStartOffset; // Offset from note origin to touch point
   Slap? _mergeTarget;
   
+  // Track current slaps for centering
+  List<Slap> _currentSlaps = [];
+  bool _hasInitializedView = false;
+  
   // Animation for merge effect
   late AnimationController _mergeAnimController;
   late Animation<double> _mergeAnimation;
@@ -104,6 +108,49 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     // Reset to show the initial area of the board
     _transformController.value = Matrix4.identity()
       ..translate(-100.0, -100.0); // Start with some padding
+  }
+
+  /// Center view on all existing notes
+  void _centerOnNotes(List<Slap> slaps) {
+    if (slaps.isEmpty) {
+      _fitToView();
+      return;
+    }
+    
+    // Calculate bounding box of all notes
+    double minX = double.infinity;
+    double minY = double.infinity;
+    double maxX = double.negativeInfinity;
+    double maxY = double.negativeInfinity;
+    
+    for (final slap in slaps) {
+      minX = minX > slap.positionX ? slap.positionX : minX;
+      minY = minY > slap.positionY ? slap.positionY : minY;
+      maxX = maxX < slap.positionX + _noteWidth ? slap.positionX + _noteWidth : maxX;
+      maxY = maxY < slap.positionY + _noteHeight ? slap.positionY + _noteHeight : maxY;
+    }
+    
+    // Add some padding
+    minX -= 50;
+    minY -= 50;
+    
+    // Get screen size
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height - 150; // Account for app bar
+    
+    // Calculate the width and height of content
+    final contentWidth = maxX - minX + 100;
+    final contentHeight = maxY - minY + 100;
+    
+    // Calculate scale to fit all notes
+    final scaleX = screenWidth / contentWidth;
+    final scaleY = screenHeight / contentHeight;
+    final scale = (scaleX < scaleY ? scaleX : scaleY).clamp(0.3, 1.5);
+    
+    // Set transform to center notes
+    _transformController.value = Matrix4.identity()
+      ..scale(scale)
+      ..translate(-minX, -minY);
   }
 
   /// Constrain position to keep note within board bounds
@@ -574,7 +621,21 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                 ],
               ),
             ),
-            data: (slaps) => Container(
+            data: (slaps) {
+              // Store current slaps for FAB access
+              _currentSlaps = slaps;
+              
+              // Auto-center on notes on first load
+              if (!_hasInitializedView && slaps.isNotEmpty) {
+                _hasInitializedView = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _centerOnNotes(slaps);
+                });
+              } else if (!_hasInitializedView && slaps.isEmpty) {
+                _hasInitializedView = true;
+              }
+              
+              return Container(
               key: _boardKey,
               child: InteractiveViewer(
                 transformationController: _transformController,
@@ -620,9 +681,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                           final isTarget = _mergeTarget?.id == slap.id;
                           final isDragging = _draggingSlap?.id == slap.id;
                           
+                          // Constrain position to visible bounds
+                          final constrainedPos = _constrainPosition(slap.positionX, slap.positionY);
+                          
                           return Positioned(
-                            left: slap.positionX,
-                            top: slap.positionY,
+                            left: constrainedPos.dx,
+                            top: constrainedPos.dy,
                             child: AnimatedScale(
                               scale: isTarget ? 1.1 : 1.0,
                               duration: const Duration(milliseconds: 150),
@@ -732,7 +796,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                 ),
               ), // GestureDetector
             ), // InteractiveViewer
-          ), // Container with _boardKey
+          ); // Container with _boardKey
+            }, // data callback
           ), // slapsStream.when
 
           // Loading overlay during merge
@@ -810,10 +875,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
           const SizedBox(height: 8),
           FloatingActionButton.small(
             heroTag: 'fit_view',
-            onPressed: _fitToView,
+            onPressed: () => _centerOnNotes(_currentSlaps),
             backgroundColor: Colors.white,
             foregroundColor: SlapColors.primary,
-            child: const Icon(Icons.fit_screen),
+            child: const Icon(Icons.center_focus_strong),
           ),
           const SizedBox(height: 16),
           // Add note button
