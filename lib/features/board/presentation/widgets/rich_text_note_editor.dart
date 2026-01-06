@@ -106,6 +106,8 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
     }
     
     widget.onContentChanged(_controller.text);
+    // Keep focus on the text field
+    _focusNode.requestFocus();
     HapticFeedback.selectionClick();
   }
 
@@ -144,6 +146,8 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
     }
     
     widget.onContentChanged(_controller.text);
+    // Keep focus on the text field
+    _focusNode.requestFocus();
     HapticFeedback.selectionClick();
   }
 
@@ -217,7 +221,8 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
             ),
             onChanged: widget.onContentChanged,
             onEditingComplete: widget.onEditingComplete,
-            onTapOutside: (_) => widget.onEditingComplete?.call(),
+            // Note: onTapOutside is handled at the parent level to avoid
+            // exiting edit mode when tapping formatting buttons
           ),
         ),
       ],
@@ -242,9 +247,9 @@ class _FormatButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(4),
+        behavior: HitTestBehavior.opaque,
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
