@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:slapp/core/theme/slap_colors.dart';
 import 'package:slapp/features/board/data/models/slap_model.dart';
+import 'package:slapp/features/board/presentation/widgets/rich_text_display.dart';
+import 'package:slapp/features/board/presentation/widgets/rich_text_note_editor.dart';
 
 /// Enhanced sticky note widget with drag, edit, and color support
 class StickyNoteEnhanced extends StatefulWidget {
@@ -150,43 +151,19 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
             Padding(
               padding: const EdgeInsets.all(12),
               child: _isEditing
-                  ? TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      maxLines: null,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.black87,
-                        height: 1.4,
+                  ? SizedBox(
+                      height: 120,
+                      child: RichTextNoteEditor(
+                        initialContent: _controller.text,
+                        focusNode: _focusNode,
+                        onContentChanged: (content) {
+                          _controller.text = content;
+                        },
+                        onEditingComplete: _finishEditing,
                       ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Write your idea...',
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      onEditingComplete: _finishEditing,
-                      onTapOutside: (_) => _finishEditing(),
                     )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.slap.content.isEmpty
-                              ? 'Double-tap to edit'
-                              : widget.slap.content,
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: widget.slap.content.isEmpty
-                                ? Colors.black38
-                                : Colors.black87,
-                            fontStyle: widget.slap.content.isEmpty
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
+                  : RichTextDisplay(
+                      content: widget.slap.content,
                     ),
             ),
           ],

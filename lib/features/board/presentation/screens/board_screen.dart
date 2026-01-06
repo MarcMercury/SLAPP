@@ -718,9 +718,11 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                                     onColorTap: () => _showColorPicker(slap),
                                     onMicTap: () => _showVoiceRecorder(slap),
                                     onSeparateTap: slap.isMerged ? () => _separateSlap(slap) : null,
-                                    onDelete: () {
-                                      ref.read(slapControllerProvider.notifier)
+                                    onDelete: () async {
+                                      await ref.read(slapControllerProvider.notifier)
                                           .deleteSlap(slap.id);
+                                      // Force refresh the stream to update UI
+                                      ref.invalidate(slapsStreamProvider(widget.boardId));
                                     },
                                   ),
                                 ),
