@@ -60,7 +60,7 @@ final isFirstLoginProvider = AutoDisposeFutureProvider<bool>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef IsFirstLoginRef = AutoDisposeFutureProviderRef<bool>;
-String _$authControllerHash() => r'841b2638db0d13186467f29ba3888c5997de8aee';
+String _$authControllerHash() => r'8869043edaaaedb0aa5a30593a50181552c0c9ad';
 
 /// Auth controller for login/logout operations
 ///

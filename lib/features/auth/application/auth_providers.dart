@@ -22,6 +22,55 @@ class AuthController extends _$AuthController {
   @override
   FutureOr<void> build() {}
 
+  /// Sign in with Google (OAuth)
+  Future<bool> signInWithGoogle() async {
+    state = const AsyncLoading();
+    try {
+      await supabase.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'https://slapp.fun',
+      );
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  /// Send OTP to email
+  Future<bool> sendEmailOtp(String email) async {
+    state = const AsyncLoading();
+    try {
+      await supabase.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: 'https://slapp.fun',
+      );
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
+  /// Verify email OTP
+  Future<bool> verifyEmailOtp(String email, String otp) async {
+    state = const AsyncLoading();
+    try {
+      await supabase.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.email,
+      );
+      state = const AsyncData(null);
+      return true;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      return false;
+    }
+  }
+
   /// Send OTP to phone number
   Future<bool> sendOtp(String phoneNumber) async {
     state = const AsyncLoading();

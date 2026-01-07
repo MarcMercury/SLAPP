@@ -205,7 +205,7 @@ class _BoardProviderElement extends AutoDisposeFutureProviderElement<Board?>
   String get boardId => (origin as BoardProvider).boardId;
 }
 
-String _$boardControllerHash() => r'9a6f7adf607d56f23598c21fb1190cbbfc46c899';
+String _$boardControllerHash() => r'56f23d958b570f24068811984e91d7030c9105de';
 
 /// Controller for board operations
 ///

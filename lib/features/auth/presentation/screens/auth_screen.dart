@@ -7,7 +7,7 @@ import 'package:slapp/core/theme/slap_colors.dart';
 import 'package:slapp/core/widgets/slap_logo.dart';
 import 'package:slapp/features/auth/application/auth_providers.dart';
 
-/// Branded authentication screen with phone-based login
+/// Branded authentication screen with Google Sign-In and Email options
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
 
@@ -17,13 +17,14 @@ class AuthScreen extends ConsumerStatefulWidget {
 
 class _AuthScreenState extends ConsumerState<AuthScreen>
     with SingleTickerProviderStateMixin {
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _otpController = TextEditingController();
-  final _phoneFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
   final _otpFocusNode = FocusNode();
 
+  bool _showEmailLogin = false;
   bool _isOtpSent = false;
-  String _phoneNumber = '';
+  String _email = '';
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
 
@@ -42,59 +43,53 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _otpController.dispose();
-    _phoneFocusNode.dispose();
+    _emailFocusNode.dispose();
     _otpFocusNode.dispose();
     _animController.dispose();
     super.dispose();
   }
 
-  Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
-    if (phone.isEmpty) {
-      _showError('Please enter your phone number');
+  Future<void> _signInWithGoogle() async {
+    final success = await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    if (!success && mounted) {
+      _showError('Failed to sign in with Google. Please try again.');
+    }
+  }
+
+  Future<void> _sendEmailOtp() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      _showError('Please enter a valid email address');
       return;
     }
 
-    // Format phone number - handle various input formats
-    if (phone.startsWith('+')) {
-      _phoneNumber = phone;
-    } else if (phone.startsWith('1') && phone.length == 11) {
-      // US number with leading 1 (e.g., 13106252953)
-      _phoneNumber = '+$phone';
-    } else if (phone.length == 10) {
-      // US number without country code (e.g., 3106252953)
-      _phoneNumber = '+1$phone';
-    } else {
-      // Assume it needs +1 prefix
-      _phoneNumber = '+1$phone';
-    }
-
-    final success = await ref.read(authControllerProvider.notifier).sendOtp(_phoneNumber);
+    _email = email;
+    final success = await ref.read(authControllerProvider.notifier).sendEmailOtp(_email);
 
     if (success) {
       setState(() => _isOtpSent = true);
       _otpFocusNode.requestFocus();
-      _showSuccess('OTP sent to $_phoneNumber');
+      _showSuccess('Verification code sent to $_email');
     } else {
-      _showError('Failed to send OTP. Please try again.');
+      _showError('Failed to send email. Please try again.');
     }
   }
 
-  Future<void> _verifyOtp() async {
+  Future<void> _verifyEmailOtp() async {
     final otp = _otpController.text.trim();
     if (otp.isEmpty || otp.length != 6) {
-      _showError('Please enter the 6-digit OTP');
+      _showError('Please enter the 6-digit code');
       return;
     }
 
-    final success = await ref.read(authControllerProvider.notifier).verifyOtp(_phoneNumber, otp);
+    final success = await ref.read(authControllerProvider.notifier).verifyEmailOtp(_email, otp);
 
     if (success && mounted) {
       context.go('/');
     } else {
-      _showError('Invalid OTP. Please try again.');
+      _showError('Invalid code. Please try again.');
     }
   }
 
@@ -144,11 +139,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo
                     const SlapLogo(size: 64, showTagline: true),
                     const SizedBox(height: 48),
-
-                    // Card container
                     Container(
                       constraints: const BoxConstraints(maxWidth: 400),
                       decoration: BoxDecoration(
@@ -166,9 +158,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Title
                           Text(
-                            _isOtpSent ? 'Verify Code' : 'Welcome Back!',
+                            _isOtpSent ? 'Check Your Email' : 'Welcome!',
                             style: GoogleFonts.fredoka(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -178,123 +169,115 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                           const SizedBox(height: 8),
                           Text(
                             _isOtpSent
-                                ? 'Enter the 6-digit code sent to\n$_phoneNumber'
-                                : 'Sign in with your phone number',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
+                                ? 'Enter the 6-digit code sent to\n$_email'
+                                : 'Sign in to start collaborating',
+                            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
-
-                          // Input fields
-                          if (!_isOtpSent) ...[
-                            // Phone input
-                            TextField(
-                              controller: _phoneController,
-                              focusNode: _phoneFocusNode,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9+\-\s()]'),
+                          if (!_showEmailLogin && !_isOtpSent) ...[
+                            _GoogleSignInButton(
+                              onPressed: isLoading ? null : _signInWithGoogle,
+                              isLoading: isLoading,
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(child: Divider(color: Colors.grey.shade300)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Text('or', style: TextStyle(color: Colors.grey.shade500)),
                                 ),
+                                Expanded(child: Divider(color: Colors.grey.shade300)),
                               ],
+                            ),
+                            const SizedBox(height: 24),
+                            OutlinedButton.icon(
+                              onPressed: () => setState(() => _showEmailLogin = true),
+                              icon: const Icon(Icons.email_outlined),
+                              label: const Text('Continue with Email'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ] else if (_showEmailLogin && !_isOtpSent) ...[
+                            TextField(
+                              controller: _emailController,
+                              focusNode: _emailFocusNode,
+                              keyboardType: TextInputType.emailAddress,
+                              autofocus: true,
                               decoration: InputDecoration(
-                                labelText: 'Phone Number',
-                                hintText: '+1 (555) 123-4567',
-                                prefixIcon: const Icon(Icons.phone_outlined),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                labelText: 'Email Address',
+                                hintText: 'you@example.com',
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                               ),
-                              onSubmitted: (_) => _sendOtp(),
+                              onSubmitted: (_) => _sendEmailOtp(),
                             ),
-                          ] else ...[
-                            // OTP input
+                            const SizedBox(height: 24),
+                            FilledButton(
+                              onPressed: isLoading ? null : _sendEmailOtp,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: SlapColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Text('Send Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: () => setState(() => _showEmailLogin = false),
+                              child: const Text('← Back to sign in options'),
+                            ),
+                          ] else if (_isOtpSent) ...[
                             TextField(
                               controller: _otpController,
                               focusNode: _otpFocusNode,
                               keyboardType: TextInputType.number,
                               textAlign: TextAlign.center,
                               maxLength: 6,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              style: GoogleFonts.jetBrainsMono(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 12,
-                              ),
+                              autofocus: true,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                              style: GoogleFonts.jetBrainsMono(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 12),
                               decoration: InputDecoration(
                                 counterText: '',
                                 hintText: '000000',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                               ),
-                              onSubmitted: (_) => _verifyOtp(),
+                              onSubmitted: (_) => _verifyEmailOtp(),
+                            ),
+                            const SizedBox(height: 24),
+                            FilledButton(
+                              onPressed: isLoading ? null : _verifyEmailOtp,
+                              style: FilledButton.styleFrom(
+                                backgroundColor: SlapColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Text('Verify', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 16),
-                            // Resend link
                             TextButton(
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        _isOtpSent = false;
-                                        _otpController.clear();
-                                      });
-                                    },
-                              child: const Text('Change phone number'),
+                              onPressed: isLoading ? null : () => setState(() { _isOtpSent = false; _otpController.clear(); }),
+                              child: const Text('Change email address'),
                             ),
                           ],
-                          const SizedBox(height: 24),
-
-                          // Submit button
-                          FilledButton(
-                            onPressed: isLoading
-                                ? null
-                                : (_isOtpSent ? _verifyOtp : _sendOtp),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: SlapColors.primary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : Text(
-                                    _isOtpSent ? 'Verify' : 'Send Code',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    // Footer
                     Text(
                       'By continuing, you agree to our Terms of Service',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade500,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                     ),
                   ],
                 ),
@@ -303,6 +286,45 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
           ),
         ),
       ),
+    );
+  }
+}
+
+class _GoogleSignInButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const _GoogleSignInButton({required this.onPressed, this.isLoading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 1,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.grey.shade300),
+        ),
+      ),
+      child: isLoading
+          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.network(
+                  'https://www.google.com/favicon.ico',
+                  width: 20,
+                  height: 20,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Text('Continue with Google', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500)),
+              ],
+            ),
     );
   }
 }
