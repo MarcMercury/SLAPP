@@ -2,7 +2,7 @@
 # ==========================================
 # This file contains ALL credentials for the SLAPP project.
 # KEEP THIS FILE - Reference it for ALL future operations.
-# Last Updated: January 5, 2026
+# Last Updated: January 7, 2026
 
 ## APP IDENTIFIERS
 ANDROID_PACKAGE_ID=fun.slapp.slapp
@@ -38,6 +38,17 @@ TWILIO_AUTH_TOKEN=7bd0e101d28578a6e0ba96cad6a86454
 TWILIO_RECOVERY_CODE=RBZGB4AG7S65NEFVPMMH4E95
 TWILIO_PHONE_NUMBER=+12517664644
 TWILIO_MESSAGING_SERVICE_SID=MGb2820566a88a85e3577299463b6d5324
+
+## TWILIO A2P 10DLC REGISTRATION (Required for US SMS delivery)
+# Brand registered: January 6, 2026
+# Status: REGISTERED ✓
+TWILIO_BRAND_REGISTRATION_SID=BN9a5ffe926bb699215l2991ea06e8d20b
+TWILIO_A2P_BUNDLE_SID=BU221586310af5e17b293f6e0df417c0d4
+TWILIO_CUSTOMER_PROFILE_SID=BUc430f30d3a6feab4ff8117c95664cb42
+TWILIO_A2P_CAMPAIGN_SID=CMb7c3273a657c4fdc3af38378dcfd0a78
+TWILIO_BRAND_TYPE=Sole Proprietor (Starter)
+# Status: PENDING CAMPAIGN VETTING (usually approved within 24 hours for 2FA)
+# Messaging Limits: 3,000 SMS/day (1,000/day to T-Mobile)
 
 ## OPENAI
 OPENAI_API_KEY=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

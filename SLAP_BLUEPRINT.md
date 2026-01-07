@@ -38,6 +38,11 @@
 | **Account SID** | `AC97d828342cd84882af121bc1edbd98c4` |
 | **Auth Token** | `7bd0e101d28578a6e0ba96cad6a86454` |
 | **Recovery Code** | `RBZGB4AG7S65NEFVPMMH4E95` |
+| **Phone Number** | `+12517664644` |
+| **Messaging Service SID** | `MGb2820566a88a85e3577299463b6d5324` |
+| **A2P Brand SID** | `BN9a5ffe926bb699215l2991ea06e8d20b` |
+| **A2P Campaign SID** | `CMb7c3273a657c4fdc3af38378dcfd0a78` |
+| **A2P Status** | ⏳ Pending Vetting (Jan 7, 2026) |
 
 ### OpenAI
 | Key | Value |

@@ -51,7 +51,6 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
     super.initState();
     _controller = TextEditingController(text: widget.slap.content);
     _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
     
     _animController = AnimationController(
       duration: const Duration(milliseconds: 150),
@@ -60,13 +59,6 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
-  }
-
-  void _onFocusChange() {
-    // When focus is lost, finish editing
-    if (!_focusNode.hasFocus && _isEditing) {
-      _finishEditing();
-    }
   }
 
   @override
@@ -79,7 +71,6 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
     _controller.dispose();
     _focusNode.dispose();
     _animController.dispose();

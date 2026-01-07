@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:slapp/core/theme/slap_colors.dart';
@@ -93,7 +94,7 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
       }
     } else {
       // No selection - insert placeholder
-      final cursorPos = selection.baseOffset;
+      final cursorPos = selection.baseOffset.clamp(0, text.length);
       final placeholder = '${prefix}text$suffix';
       final newText = text.substring(0, cursorPos) + placeholder + text.substring(cursorPos);
       _controller.value = TextEditingValue(
@@ -105,10 +106,15 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
       );
     }
     
-    widget.onContentChanged(_controller.text);
-    // Keep focus on the text field
-    _focusNode.requestFocus();
     HapticFeedback.selectionClick();
+    widget.onContentChanged(_controller.text);
+    
+    // Ensure focus is restored after the frame is built
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   void _toggleBold() => _applyFormatting('**', '**');
@@ -118,7 +124,7 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
   void _toggleBullet() {
     final selection = _controller.selection;
     final text = _controller.text;
-    final cursorPos = selection.baseOffset;
+    final cursorPos = selection.baseOffset.clamp(0, text.length);
     
     // Find the start of the current line
     int lineStart = cursorPos;
@@ -134,7 +140,7 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
       final newText = text.replaceRange(lineStart, lineStart + 2, '');
       _controller.value = TextEditingValue(
         text: newText,
-        selection: TextSelection.collapsed(offset: cursorPos - 2),
+        selection: TextSelection.collapsed(offset: (cursorPos - 2).clamp(0, newText.length)),
       );
     } else {
       // Add bullet
@@ -145,10 +151,15 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
       );
     }
     
-    widget.onContentChanged(_controller.text);
-    // Keep focus on the text field
-    _focusNode.requestFocus();
     HapticFeedback.selectionClick();
+    widget.onContentChanged(_controller.text);
+    
+    // Ensure focus is restored after the frame is built
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   @override
@@ -156,48 +167,77 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Formatting toolbar
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _FormatButton(
-                icon: Icons.format_bold,
-                isActive: _isBold,
-                onTap: _toggleBold,
-                tooltip: 'Bold',
+        // Formatting toolbar with Done button
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _FormatButton(
+                      icon: Icons.format_bold,
+                      isActive: _isBold,
+                      onTap: _toggleBold,
+                      tooltip: 'Bold',
+                    ),
+                    _FormatButton(
+                      icon: Icons.format_italic,
+                      isActive: _isItalic,
+                      onTap: _toggleItalic,
+                      tooltip: 'Italic',
+                    ),
+                    _FormatButton(
+                      icon: Icons.format_underlined,
+                      isActive: _isUnderline,
+                      onTap: _toggleUnderline,
+                      tooltip: 'Underline',
+                    ),
+                    Container(
+                      width: 1,
+                      height: 20,
+                      color: Colors.black26,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                    _FormatButton(
+                      icon: Icons.format_list_bulleted,
+                      isActive: false,
+                      onTap: _toggleBullet,
+                      tooltip: 'Bullet List',
+                    ),
+                  ],
+                ),
               ),
-              _FormatButton(
-                icon: Icons.format_italic,
-                isActive: _isItalic,
-                onTap: _toggleItalic,
-                tooltip: 'Italic',
+            ),
+            const SizedBox(width: 8),
+            // Done button
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.onEditingComplete?.call();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: SlapColors.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Done',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              _FormatButton(
-                icon: Icons.format_underlined,
-                isActive: _isUnderline,
-                onTap: _toggleUnderline,
-                tooltip: 'Underline',
-              ),
-              Container(
-                width: 1,
-                height: 20,
-                color: Colors.black26,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-              _FormatButton(
-                icon: Icons.format_list_bulleted,
-                isActive: false,
-                onTap: _toggleBullet,
-                tooltip: 'Bullet List',
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
         // Text field
