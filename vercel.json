@@ -1,6 +1,7 @@
 {
   "version": 2,
   "public": true,
+  "outputDirectory": "build/web",
   "github": {
     "enabled": false
   },

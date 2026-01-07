@@ -51,14 +51,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Future<void> _sendOtp() async {
-    final phone = _phoneController.text.trim();
+    final phone = _phoneController.text.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
     if (phone.isEmpty) {
       _showError('Please enter your phone number');
       return;
     }
 
-    // Format phone number
-    _phoneNumber = phone.startsWith('+') ? phone : '+1$phone';
+    // Format phone number - handle various input formats
+    if (phone.startsWith('+')) {
+      _phoneNumber = phone;
+    } else if (phone.startsWith('1') && phone.length == 11) {
+      // US number with leading 1 (e.g., 13106252953)
+      _phoneNumber = '+$phone';
+    } else if (phone.length == 10) {
+      // US number without country code (e.g., 3106252953)
+      _phoneNumber = '+1$phone';
+    } else {
+      // Assume it needs +1 prefix
+      _phoneNumber = '+1$phone';
+    }
 
     final success = await ref.read(authControllerProvider.notifier).sendOtp(_phoneNumber);
 
