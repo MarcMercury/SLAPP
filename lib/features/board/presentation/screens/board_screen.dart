@@ -24,22 +24,25 @@ class BoardScreen extends ConsumerStatefulWidget {
 
 class _BoardScreenState extends ConsumerState<BoardScreen>
     with TickerProviderStateMixin {
-  final TransformationController _transformController = TransformationController();
+  final TransformationController _transformController =
+      TransformationController();
   final GlobalKey _boardKey = GlobalKey();
-  
+
   // Drag and drop tracking for SLAP merge
   Slap? _draggingSlap;
   Offset? _dragPosition; // In board-local coordinates
   Offset? _dragStartOffset; // Offset from note origin to touch point
   Slap? _mergeTarget;
-  
+
   // Track current slaps for centering
   List<Slap> _currentSlaps = [];
   bool _hasInitializedView = false;
-  
+
   // Animation for merge effect
   late AnimationController _mergeAnimController;
+  // ignore: unused_field - reserved for future merge animation
   late Animation<double> _mergeAnimation;
+  // ignore: unused_field - reserved for future merge animation
   bool _isMerging = false;
 
   @override
@@ -87,19 +90,19 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   void _animateZoom(double targetScale) {
     final currentMatrix = _transformController.value;
     final currentScale = currentMatrix.getMaxScaleOnAxis();
-    
+
     // Scale from center of viewport
     final viewportCenter = Offset(
       MediaQuery.of(context).size.width / 2,
       MediaQuery.of(context).size.height / 2,
     );
-    
+
     final scaleChange = targetScale / currentScale;
     final newMatrix = currentMatrix.clone()
       ..translate(viewportCenter.dx, viewportCenter.dy)
       ..scale(scaleChange)
       ..translate(-viewportCenter.dx, -viewportCenter.dy);
-    
+
     _transformController.value = newMatrix;
   }
 
@@ -116,37 +119,42 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
       _fitToView();
       return;
     }
-    
+
     // Calculate bounding box of all notes
     double minX = double.infinity;
     double minY = double.infinity;
     double maxX = double.negativeInfinity;
     double maxY = double.negativeInfinity;
-    
+
     for (final slap in slaps) {
       minX = minX > slap.positionX ? slap.positionX : minX;
       minY = minY > slap.positionY ? slap.positionY : minY;
-      maxX = maxX < slap.positionX + _noteWidth ? slap.positionX + _noteWidth : maxX;
-      maxY = maxY < slap.positionY + _noteHeight ? slap.positionY + _noteHeight : maxY;
+      maxX = maxX < slap.positionX + _noteWidth
+          ? slap.positionX + _noteWidth
+          : maxX;
+      maxY = maxY < slap.positionY + _noteHeight
+          ? slap.positionY + _noteHeight
+          : maxY;
     }
-    
+
     // Add some padding
     minX -= 50;
     minY -= 50;
-    
+
     // Get screen size
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height - 150; // Account for app bar
-    
+    final screenHeight =
+        MediaQuery.of(context).size.height - 150; // Account for app bar
+
     // Calculate the width and height of content
     final contentWidth = maxX - minX + 100;
     final contentHeight = maxY - minY + 100;
-    
+
     // Calculate scale to fit all notes
     final scaleX = screenWidth / contentWidth;
     final scaleY = screenHeight / contentHeight;
     final scale = (scaleX < scaleY ? scaleX : scaleY).clamp(0.3, 1.5);
-    
+
     // Set transform to center notes
     _transformController.value = Matrix4.identity()
       ..scale(scale)
@@ -166,10 +174,10 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     // Constrain position to board bounds
     final constrained = _constrainPosition(position.dx, position.dy);
     await ref.read(slapControllerProvider.notifier).createSlap(
-      boardId: widget.boardId,
-      x: constrained.dx,
-      y: constrained.dy,
-    );
+          boardId: widget.boardId,
+          x: constrained.dx,
+          y: constrained.dy,
+        );
   }
 
   void _handleDragStart(Slap slap, Offset globalPosition) {
@@ -191,17 +199,18 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   /// Convert global screen coordinates to board-local coordinates
   Offset _globalToLocal(Offset globalPosition) {
     // Get the RenderBox for the board
-    final RenderBox? box = _boardKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? box =
+        _boardKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return globalPosition;
-    
+
     // Convert global to widget-local
     final localPoint = box.globalToLocal(globalPosition);
-    
+
     // Apply inverse of transform to get board coordinates
     final matrix = _transformController.value;
     final inverted = Matrix4.inverted(matrix);
     final transformed = MatrixUtils.transformPoint(inverted, localPoint);
-    
+
     return transformed;
   }
 
@@ -222,19 +231,21 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   }
 
   void _handleDragEnd(Slap slap, List<Slap> allSlaps) async {
-    final finalPosition = _dragPosition ?? Offset(slap.positionX, slap.positionY);
-    
+    final finalPosition =
+        _dragPosition ?? Offset(slap.positionX, slap.positionY);
+
     if (_mergeTarget != null && _mergeTarget!.id != slap.id) {
       // Perform SLAP merge!
       await _performMerge(slap, _mergeTarget!);
     } else {
       // Constrain position to board bounds
-      final constrained = _constrainPosition(finalPosition.dx, finalPosition.dy);
+      final constrained =
+          _constrainPosition(finalPosition.dx, finalPosition.dy);
       await ref.read(slapControllerProvider.notifier).updatePosition(
-        slap.id,
-        constrained.dx,
-        constrained.dy,
-      );
+            slap.id,
+            constrained.dx,
+            constrained.dy,
+          );
     }
 
     setState(() {
@@ -268,15 +279,16 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   Future<void> _performMerge(Slap source, Slap target) async {
     setState(() => _isMerging = true);
     HapticFeedback.heavyImpact();
-    
+
     // Show merge animation
     _mergeAnimController.forward(from: 0);
-    
+
     // Perform the AI merge
-    final mergedSlap = await ref.read(slapControllerProvider.notifier).mergeSlaps(
-      source,
-      target,
-    );
+    final mergedSlap =
+        await ref.read(slapControllerProvider.notifier).mergeSlaps(
+              source,
+              target,
+            );
 
     // Force refresh the slaps stream to remove deleted slaps
     ref.invalidate(slapsStreamProvider(widget.boardId));
@@ -285,16 +297,17 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
       // Show success feedback
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
+          content: const Row(
             children: [
-              const Icon(Icons.auto_awesome, color: Colors.white),
-              const SizedBox(width: 12),
-              const Expanded(child: Text('Ideas merged with AI! ✨')),
+              Icon(Icons.auto_awesome, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Ideas merged with AI! ✨')),
             ],
           ),
           backgroundColor: SlapColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -361,7 +374,9 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
     );
 
     if (confirmed == true && mounted) {
-      await ref.read(boardControllerProvider.notifier).deleteBoard(widget.boardId);
+      await ref
+          .read(boardControllerProvider.notifier)
+          .deleteBoard(widget.boardId);
       if (mounted) {
         context.go('/');
       }
@@ -370,7 +385,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
 
   void _showInviteDialog() {
     final controller = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -397,13 +412,14 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
             onPressed: () async {
               final phone = controller.text.trim();
               if (phone.isNotEmpty) {
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
                 Navigator.pop(context);
                 await ref.read(boardControllerProvider.notifier).inviteMember(
-                  widget.boardId,
-                  phone,
-                );
+                      widget.boardId,
+                      phone,
+                    );
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  scaffoldMessenger.showSnackBar(
                     SnackBar(
                       content: Text('Invitation sent to $phone'),
                       backgroundColor: SlapColors.success,
@@ -446,14 +462,14 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                 final color = entry.value;
                 final hexColor = SlapColors.noteColorHex[entry.key];
                 final isSelected = slap.color == hexColor;
-                
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
                     ref.read(slapControllerProvider.notifier).updateColor(
-                      slap.id,
-                      hexColor,
-                    );
+                          slap.id,
+                          hexColor,
+                        );
                   },
                   child: Container(
                     width: 48,
@@ -496,13 +512,12 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
         slap: slap,
         onTextRecorded: (text) {
           // Append recorded text to existing content
-          final newContent = slap.content.isEmpty 
-              ? text 
-              : '${slap.content}\n$text';
+          final newContent =
+              slap.content.isEmpty ? text : '${slap.content}\n$text';
           ref.read(slapControllerProvider.notifier).updateContent(
-            slap.id,
-            newContent,
-          );
+                slap.id,
+                newContent,
+              );
         },
       ),
     );
@@ -538,9 +553,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
 
     HapticFeedback.mediumImpact();
 
-    final separatedSlaps = await ref
-        .read(slapControllerProvider.notifier)
-        .separateSlap(slap);
+    final separatedSlaps =
+        await ref.read(slapControllerProvider.notifier).separateSlap(slap);
 
     // Force refresh
     ref.invalidate(slapsStreamProvider(widget.boardId));
@@ -557,7 +571,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
           ),
           backgroundColor: SlapColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -567,7 +582,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
   Widget build(BuildContext context) {
     final boardAsync = ref.watch(boardProvider(widget.boardId));
     final slapsStream = ref.watch(slapsStreamProvider(widget.boardId));
-    
+
     // Get board name for options sheet
     final boardName = boardAsync.valueOrNull?.name ?? 'Board';
 
@@ -615,7 +630,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                   const SizedBox(height: 16),
                   Text('Error loading slaps: $err'),
                   TextButton(
-                    onPressed: () => ref.invalidate(slapsStreamProvider(widget.boardId)),
+                    onPressed: () =>
+                        ref.invalidate(slapsStreamProvider(widget.boardId)),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -624,7 +640,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
             data: (slaps) {
               // Store current slaps for FAB access
               _currentSlaps = slaps;
-              
+
               // Auto-center on notes on first load
               if (!_hasInitializedView && slaps.isNotEmpty) {
                 _hasInitializedView = true;
@@ -634,171 +650,189 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
               } else if (!_hasInitializedView && slaps.isEmpty) {
                 _hasInitializedView = true;
               }
-              
+
               return Container(
-              key: _boardKey,
-              child: InteractiveViewer(
-                transformationController: _transformController,
-                boundaryMargin: const EdgeInsets.all(double.infinity),
-                minScale: 0.1,
-                maxScale: 4.0,
-                constrained: false,
-                child: GestureDetector(
-                  // Only create slap if double-tapping empty area (not on a note)
-                  onDoubleTap: () {},
-                  onDoubleTapDown: (details) {
-                    // Check if tap is on an existing slap
-                    final pos = details.localPosition;
-                    final onSlap = slaps.any((slap) {
-                      final slapRect = Rect.fromLTWH(
-                        slap.positionX,
-                        slap.positionY,
-                        200, // note width
-                        150, // note min height
-                      );
-                      return slapRect.contains(pos);
-                    });
-                    // Only create new slap if not tapping on existing one
-                    if (!onSlap) {
-                      _addSlap(pos);
-                    }
-                  },
-                  child: Container(
-                  // Large board: ~10ft x 10ft equivalent for ample space
-                  width: _boardWidth,
-                  height: _boardHeight,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                  ),
-                  child: CustomPaint(
-                    painter: _GridPainter(
-                      isDark: Theme.of(context).brightness == Brightness.dark,
-                    ),
-                    child: Stack(
-                      children: [
-                        // Render all slaps
-                        ...slaps.map((slap) {
-                          final isTarget = _mergeTarget?.id == slap.id;
-                          final isDragging = _draggingSlap?.id == slap.id;
-                          
-                          // Constrain position to visible bounds
-                          final constrainedPos = _constrainPosition(slap.positionX, slap.positionY);
-                          
-                          return Positioned(
-                            left: constrainedPos.dx,
-                            top: constrainedPos.dy,
-                            child: AnimatedScale(
-                              scale: isTarget ? 1.1 : 1.0,
-                              duration: const Duration(milliseconds: 150),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                decoration: isTarget
-                                    ? BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: SlapColors.primary.withOpacity(0.5),
-                                            blurRadius: 20,
-                                            spreadRadius: 5,
-                                          ),
-                                        ],
-                                      )
-                                    : null,
-                                child: Opacity(
-                                  opacity: isDragging ? 0.5 : 1.0,
-                                  child: StickyNoteEnhanced(
-                                    slap: slap,
-                                    onDragStart: (globalPos) => _handleDragStart(slap, globalPos),
-                                    onDragUpdate: (pos) => _handleDragUpdate(pos, slaps),
-                                    onDragEnd: () => _handleDragEnd(slap, slaps),
-                                    onContentChanged: (content) {
-                                      ref.read(slapControllerProvider.notifier)
-                                          .updateContent(slap.id, content);
-                                    },
-                                    onColorTap: () => _showColorPicker(slap),
-                                    onMicTap: () => _showVoiceRecorder(slap),
-                                    onSeparateTap: slap.isMerged ? () => _separateSlap(slap) : null,
-                                    onDelete: () async {
-                                      await ref.read(slapControllerProvider.notifier)
-                                          .deleteSlap(slap.id);
-                                      // Force refresh the stream to update UI
-                                      ref.invalidate(slapsStreamProvider(widget.boardId));
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                        
-                        // Drag indicator (follows the note position)
-                        if (_draggingSlap != null && _dragPosition != null)
-                          Positioned(
-                            left: _dragPosition!.dx,
-                            top: _dragPosition!.dy,
-                            child: IgnorePointer(
-                              child: Container(
-                                width: 200,
-                                height: 150,
-                                decoration: BoxDecoration(
-                                  color: SlapColors.fromHex(_draggingSlap!.color)
-                                      .withOpacity(0.8),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: _mergeTarget != null
-                                        ? SlapColors.primary
-                                        : Colors.transparent,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
+                key: _boardKey,
+                child: InteractiveViewer(
+                  transformationController: _transformController,
+                  boundaryMargin: const EdgeInsets.all(double.infinity),
+                  minScale: 0.1,
+                  maxScale: 4.0,
+                  constrained: false,
+                  child: GestureDetector(
+                    // Only create slap if double-tapping empty area (not on a note)
+                    onDoubleTap: () {},
+                    onDoubleTapDown: (details) {
+                      // Check if tap is on an existing slap
+                      final pos = details.localPosition;
+                      final onSlap = slaps.any((slap) {
+                        final slapRect = Rect.fromLTWH(
+                          slap.positionX,
+                          slap.positionY,
+                          200, // note width
+                          150, // note min height
+                        );
+                        return slapRect.contains(pos);
+                      });
+                      // Only create new slap if not tapping on existing one
+                      if (!onSlap) {
+                        _addSlap(pos);
+                      }
+                    },
+                    child: Container(
+                      // Large board: ~10ft x 10ft equivalent for ample space
+                      width: _boardWidth,
+                      height: _boardHeight,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                      ),
+                      child: CustomPaint(
+                        painter: _GridPainter(
+                          isDark:
+                              Theme.of(context).brightness == Brightness.dark,
+                        ),
+                        child: Stack(
+                          children: [
+                            // Render all slaps
+                            ...slaps.map((slap) {
+                              final isTarget = _mergeTarget?.id == slap.id;
+                              final isDragging = _draggingSlap?.id == slap.id;
+
+                              // Constrain position to visible bounds
+                              final constrainedPos = _constrainPosition(
+                                  slap.positionX, slap.positionY);
+
+                              return Positioned(
+                                left: constrainedPos.dx,
+                                top: constrainedPos.dy,
+                                child: AnimatedScale(
+                                  scale: isTarget ? 1.1 : 1.0,
+                                  duration: const Duration(milliseconds: 150),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 150),
+                                    decoration: isTarget
+                                        ? BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: SlapColors.primary
+                                                    .withOpacity(0.5),
+                                                blurRadius: 20,
+                                                spreadRadius: 5,
+                                              ),
+                                            ],
+                                          )
+                                        : null,
+                                    child: Opacity(
+                                      opacity: isDragging ? 0.5 : 1.0,
+                                      child: StickyNoteEnhanced(
+                                        slap: slap,
+                                        onDragStart: (globalPos) =>
+                                            _handleDragStart(slap, globalPos),
+                                        onDragUpdate: (pos) =>
+                                            _handleDragUpdate(pos, slaps),
+                                        onDragEnd: () =>
+                                            _handleDragEnd(slap, slaps),
+                                        onContentChanged: (content) {
+                                          ref
+                                              .read(slapControllerProvider
+                                                  .notifier)
+                                              .updateContent(slap.id, content);
+                                        },
+                                        onColorTap: () =>
+                                            _showColorPicker(slap),
+                                        onMicTap: () =>
+                                            _showVoiceRecorder(slap),
+                                        onSeparateTap: slap.isMerged
+                                            ? () => _separateSlap(slap)
+                                            : null,
+                                        onDelete: () async {
+                                          await ref
+                                              .read(slapControllerProvider
+                                                  .notifier)
+                                              .deleteSlap(slap.id);
+                                          // Force refresh the stream to update UI
+                                          ref.invalidate(slapsStreamProvider(
+                                              widget.boardId));
+                                        },
+                                      ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                                child: Center(
-                                  child: _mergeTarget != null
-                                      ? Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(
-                                              Icons.merge,
-                                              size: 32,
-                                              color: SlapColors.primary,
-                                            ),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              'SLAP!',
-                                              style: GoogleFonts.fredoka(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: SlapColors.primary,
+                              );
+                            }),
+
+                            // Drag indicator (follows the note position)
+                            if (_draggingSlap != null && _dragPosition != null)
+                              Positioned(
+                                left: _dragPosition!.dx,
+                                top: _dragPosition!.dy,
+                                child: IgnorePointer(
+                                  child: Container(
+                                    width: 200,
+                                    height: 150,
+                                    decoration: BoxDecoration(
+                                      color: SlapColors.fromHex(
+                                              _draggingSlap!.color)
+                                          .withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: _mergeTarget != null
+                                            ? SlapColors.primary
+                                            : Colors.transparent,
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 10),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Center(
+                                      child: _mergeTarget != null
+                                          ? Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.merge,
+                                                  size: 32,
+                                                  color: SlapColors.primary,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'SLAP!',
+                                                  style: GoogleFonts.fredoka(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: SlapColors.primary,
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              _draggingSlap!.content.isEmpty
+                                                  ? '...'
+                                                  : _draggingSlap!.content,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                color: Colors.black54,
                                               ),
                                             ),
-                                          ],
-                                        )
-                                      : Text(
-                                          _draggingSlap!.content.isEmpty
-                                              ? '...'
-                                              : _draggingSlap!.content,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: Colors.black54,
-                                          ),
-                                        ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ), // GestureDetector
-            ), // InteractiveViewer
-          ); // Container with _boardKey
+                  ), // GestureDetector
+                ), // InteractiveViewer
+              ); // Container with _boardKey
             }, // data callback
           ), // slapsStream.when
 
@@ -816,7 +850,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const CircularProgressIndicator(color: SlapColors.primary),
+                      const CircularProgressIndicator(
+                          color: SlapColors.primary),
                       const SizedBox(height: 16),
                       Text(
                         'Merging ideas with AI...',
@@ -838,7 +873,8 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(20),
@@ -907,7 +943,7 @@ class _BoardScreenState extends ConsumerState<BoardScreen>
 /// Grid background painter
 class _GridPainter extends CustomPainter {
   final bool isDark;
-  
+
   _GridPainter({this.isDark = false});
 
   @override
@@ -1029,11 +1065,11 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
     setState(() {
       _statusMessage = 'Initializing speech recognition...';
     });
-    
+
     try {
       _isInitialized = await _speech.initialize(
         onStatus: (status) {
-          print('[Speech] Status: $status');
+          debugPrint('[Speech] Status: $status');
           if (mounted) {
             setState(() {
               _statusMessage = 'Status: $status';
@@ -1044,7 +1080,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
           }
         },
         onError: (error) {
-          print('[Speech] Error: ${error.errorMsg}');
+          debugPrint('[Speech] Error: ${error.errorMsg}');
           if (mounted) {
             setState(() {
               _errorMessage = 'Error: ${error.errorMsg}';
@@ -1054,21 +1090,22 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
         },
         debugLogging: true, // Enable debug logging
       );
-      
-      print('[Speech] Initialized: $_isInitialized');
-      print('[Speech] Has permission: ${_speech.hasPermission}');
-      
+
+      debugPrint('[Speech] Initialized: $_isInitialized');
+      debugPrint('[Speech] Has permission: ${_speech.hasPermission}');
+
       if (mounted) {
         setState(() {
           if (_isInitialized) {
             _statusMessage = 'Ready! Tap the mic to start.';
           } else {
-            _errorMessage = 'Speech recognition not available on this device/browser';
+            _errorMessage =
+                'Speech recognition not available on this device/browser';
           }
         });
       }
     } catch (e) {
-      print('[Speech] Init exception: $e');
+      debugPrint('[Speech] Init exception: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Could not initialize: $e';
@@ -1080,7 +1117,8 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
   Future<void> _startListening() async {
     if (!_isInitialized) {
       setState(() {
-        _errorMessage = 'Speech recognition not available. Try using Chrome browser.';
+        _errorMessage =
+            'Speech recognition not available. Try using Chrome browser.';
       });
       return;
     }
@@ -1095,8 +1133,9 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
     try {
       // Check available locales
       final locales = await _speech.locales();
-      print('[Speech] Available locales: ${locales.map((l) => l.localeId).toList()}');
-      
+      debugPrint(
+          '[Speech] Available locales: ${locales.map((l) => l.localeId).toList()}');
+
       // Find an English locale or use the system default
       String? localeId;
       for (final locale in locales) {
@@ -1106,13 +1145,14 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
         }
       }
       localeId ??= locales.isNotEmpty ? locales.first.localeId : null;
-      
-      print('[Speech] Using locale: $localeId');
-      print('[Speech] isListening before: ${_speech.isListening}');
-      
+
+      debugPrint('[Speech] Using locale: $localeId');
+      debugPrint('[Speech] isListening before: ${_speech.isListening}');
+
       await _speech.listen(
         onResult: (result) {
-          print('[Speech] Result: ${result.recognizedWords} (final: ${result.finalResult})');
+          debugPrint(
+              '[Speech] Result: ${result.recognizedWords} (final: ${result.finalResult})');
           if (mounted) {
             setState(() {
               _recognizedText = result.recognizedWords;
@@ -1125,19 +1165,20 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
         localeId: localeId,
         onSoundLevelChange: (level) {
           // This shows us the mic is working
-          print('[Speech] Sound level: $level');
+          debugPrint('[Speech] Sound level: $level');
         },
       );
-      
+
       // Small delay to let speech recognition actually start
       await Future.delayed(const Duration(milliseconds: 100));
-      
-      print('[Speech] isListening after: ${_speech.isListening}');
-      print('[Speech] isAvailable: ${_speech.isAvailable}');
-      
+
+      debugPrint('[Speech] isListening after: ${_speech.isListening}');
+      debugPrint('[Speech] isAvailable: ${_speech.isAvailable}');
+
       if (!_speech.isListening && mounted) {
         setState(() {
-          _errorMessage = 'Speech recognition failed to start. Make sure microphone permissions are granted.';
+          _errorMessage =
+              'Speech recognition failed to start. Make sure microphone permissions are granted.';
           _isListening = false;
         });
       } else if (mounted) {
@@ -1146,7 +1187,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
         });
       }
     } catch (e) {
-      print('[Speech] Listen exception: $e');
+      debugPrint('[Speech] Listen exception: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to start: $e';
@@ -1196,7 +1237,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
           ),
           const SizedBox(height: 8),
           Text(
-            _isInitialized 
+            _isInitialized
                 ? 'Tap the microphone to start speaking'
                 : 'Initializing...',
             style: GoogleFonts.poppins(
@@ -1217,7 +1258,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
               ),
             ),
           const SizedBox(height: 24),
-          
+
           // Microphone button
           GestureDetector(
             onTap: _isListening ? _stopListening : _startListening,
@@ -1244,9 +1285,9 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Status message
           if (_statusMessage.isNotEmpty && !_isListening)
             Padding(
@@ -1260,7 +1301,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
                 textAlign: TextAlign.center,
               ),
             ),
-          
+
           if (_isListening)
             Text(
               _statusMessage.isNotEmpty ? _statusMessage : 'Listening...',
@@ -1270,7 +1311,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-          
+
           if (_errorMessage.isNotEmpty) ...[
             const SizedBox(height: 16),
             Container(
@@ -1286,14 +1327,15 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
                   Expanded(
                     child: Text(
                       _errorMessage,
-                      style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 13),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          
+
           if (_recognizedText.isNotEmpty) ...[
             const SizedBox(height: 24),
             Container(
@@ -1348,7 +1390,7 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
               ],
             ),
           ],
-          
+
           const SizedBox(height: 24),
         ],
       ),

@@ -20,19 +20,22 @@ class _WelcomeDialogState extends State<WelcomeDialog> {
     _WelcomeStep(
       icon: Icons.sticky_note_2_outlined,
       title: 'Create Notes',
-      description: 'Tap anywhere on the board to create a sticky note. Add your ideas, thoughts, and inspirations.',
+      description:
+          'Tap anywhere on the board to create a sticky note. Add your ideas, thoughts, and inspirations.',
       color: SlapColors.noteColors[0],
     ),
     _WelcomeStep(
       icon: Icons.groups_outlined,
       title: 'Collaborate',
-      description: 'Invite your team by phone number. Everyone sees changes in real-time.',
+      description:
+          'Invite your team by phone number. Everyone sees changes in real-time.',
       color: SlapColors.noteColors[2],
     ),
     _WelcomeStep(
       icon: Icons.back_hand,
       title: 'SLAP to Merge!',
-      description: 'Drag one note onto another to SLAP them together. Our AI will merge the ideas into something new!',
+      description:
+          'Drag one note onto another to SLAP them together. Our AI will merge the ideas into something new!',
       color: SlapColors.primary,
       isHighlight: true,
     ),

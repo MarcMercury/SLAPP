@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Widget to display rich text content with markdown-like formatting
-/// 
+///
 /// Supports:
 /// - **bold** for bold text
-/// - *italic* for italic text  
+/// - *italic* for italic text
 /// - __underline__ for underlined text
 /// - Lines starting with "• " are bullet points
 class RichTextDisplay extends StatelessWidget {
@@ -78,11 +78,12 @@ class RichTextDisplay extends StatelessWidget {
   }
 
   TextStyle _getBaseStyle() {
-    return baseStyle ?? GoogleFonts.poppins(
-      fontSize: 14,
-      color: textColor ?? Colors.black87,
-      height: 1.4,
-    );
+    return baseStyle ??
+        GoogleFonts.poppins(
+          fontSize: 14,
+          color: textColor ?? Colors.black87,
+          height: 1.4,
+        );
   }
 
   Widget _buildFormattedText(String text) {
@@ -98,7 +99,7 @@ class RichTextDisplay extends StatelessWidget {
   List<TextSpan> _parseFormattedText(String text) {
     final List<TextSpan> spans = [];
     final baseStyle = _getBaseStyle();
-    
+
     // Pattern order matters - check longer patterns first
     // Patterns: **bold**, *italic*, __underline__
     final RegExp formatPattern = RegExp(
@@ -118,7 +119,7 @@ class RichTextDisplay extends StatelessWidget {
       }
 
       final matchedText = match.group(0)!;
-      
+
       if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
         // Bold
         spans.add(TextSpan(

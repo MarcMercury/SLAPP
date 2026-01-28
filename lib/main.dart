@@ -40,7 +40,8 @@ class SlappApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.light, // Force light theme for consistency across platforms
+      themeMode:
+          ThemeMode.light, // Force light theme for consistency across platforms
       routerConfig: router,
     );
   }

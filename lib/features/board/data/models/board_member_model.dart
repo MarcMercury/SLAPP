@@ -16,7 +16,7 @@ class BoardMember {
 
   factory BoardMember.fromJson(Map<String, dynamic> json) {
     final profile = json['profiles'] as Map<String, dynamic>?;
-    
+
     return BoardMember(
       odId: profile?['id'] as String? ?? '',
       role: json['role'] as String? ?? 'member',

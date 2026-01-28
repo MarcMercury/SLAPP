@@ -26,17 +26,17 @@ GoRouter router(Ref ref) {
     redirect: (context, state) {
       final isLoggedIn = supabase.auth.currentUser != null;
       final isGoingToAuth = state.matchedLocation == AppRoutes.auth;
-      
+
       // If not logged in and not going to auth, redirect to auth
       if (!isLoggedIn && !isGoingToAuth) {
         return AppRoutes.auth;
       }
-      
+
       // If logged in and going to auth, redirect to dashboard
       if (isLoggedIn && isGoingToAuth) {
         return AppRoutes.dashboard;
       }
-      
+
       return null; // No redirect
     },
     routes: [

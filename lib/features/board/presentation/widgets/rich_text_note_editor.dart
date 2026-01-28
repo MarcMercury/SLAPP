@@ -6,7 +6,7 @@ import 'package:slapp/core/theme/slap_colors.dart';
 
 /// A simple rich text editor for sticky notes with basic formatting options
 /// Supports: Bold, Italic, Underline, Bullet Lists
-/// 
+///
 /// Uses markdown-like syntax for storage:
 /// - **bold** for bold text
 /// - *italic* for italic text
@@ -59,7 +59,8 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
     // Check current selection for active formatting
     final selection = _controller.selection;
     if (selection.isValid && selection.start != selection.end) {
-      final selectedText = _controller.text.substring(selection.start, selection.end);
+      final selectedText =
+          _controller.text.substring(selection.start, selection.end);
       setState(() {
         _isBold = selectedText.contains('**');
         _isItalic = selectedText.contains('*') && !selectedText.contains('**');
@@ -71,32 +72,39 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
   void _applyFormatting(String prefix, String suffix) {
     final selection = _controller.selection;
     final text = _controller.text;
-    
+
     if (selection.isValid && selection.start != selection.end) {
       // Text is selected - wrap it
       final selectedText = text.substring(selection.start, selection.end);
-      
+
       // Check if already formatted - if so, remove formatting
       if (selectedText.startsWith(prefix) && selectedText.endsWith(suffix)) {
-        final unformatted = selectedText.substring(prefix.length, selectedText.length - suffix.length);
-        final newText = text.replaceRange(selection.start, selection.end, unformatted);
+        final unformatted = selectedText.substring(
+            prefix.length, selectedText.length - suffix.length);
+        final newText =
+            text.replaceRange(selection.start, selection.end, unformatted);
         _controller.value = TextEditingValue(
           text: newText,
-          selection: TextSelection.collapsed(offset: selection.start + unformatted.length),
+          selection: TextSelection.collapsed(
+              offset: selection.start + unformatted.length),
         );
       } else {
         final formatted = '$prefix$selectedText$suffix';
-        final newText = text.replaceRange(selection.start, selection.end, formatted);
+        final newText =
+            text.replaceRange(selection.start, selection.end, formatted);
         _controller.value = TextEditingValue(
           text: newText,
-          selection: TextSelection.collapsed(offset: selection.start + formatted.length),
+          selection: TextSelection.collapsed(
+              offset: selection.start + formatted.length),
         );
       }
     } else {
       // No selection - insert placeholder
       final cursorPos = selection.baseOffset.clamp(0, text.length);
       final placeholder = '${prefix}text$suffix';
-      final newText = text.substring(0, cursorPos) + placeholder + text.substring(cursorPos);
+      final newText = text.substring(0, cursorPos) +
+          placeholder +
+          text.substring(cursorPos);
       _controller.value = TextEditingValue(
         text: newText,
         selection: TextSelection(
@@ -105,10 +113,10 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
         ),
       );
     }
-    
+
     HapticFeedback.selectionClick();
     widget.onContentChanged(_controller.text);
-    
+
     // Ensure focus is restored after the frame is built
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -125,22 +133,24 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
     final selection = _controller.selection;
     final text = _controller.text;
     final cursorPos = selection.baseOffset.clamp(0, text.length);
-    
+
     // Find the start of the current line
     int lineStart = cursorPos;
     while (lineStart > 0 && text[lineStart - 1] != '\n') {
       lineStart--;
     }
-    
+
     // Check if line already starts with bullet
-    final linePrefix = text.substring(lineStart, (lineStart + 2).clamp(0, text.length));
-    
+    final linePrefix =
+        text.substring(lineStart, (lineStart + 2).clamp(0, text.length));
+
     if (linePrefix.startsWith('• ')) {
       // Remove bullet
       final newText = text.replaceRange(lineStart, lineStart + 2, '');
       _controller.value = TextEditingValue(
         text: newText,
-        selection: TextSelection.collapsed(offset: (cursorPos - 2).clamp(0, newText.length)),
+        selection: TextSelection.collapsed(
+            offset: (cursorPos - 2).clamp(0, newText.length)),
       );
     } else {
       // Add bullet
@@ -150,10 +160,10 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
         selection: TextSelection.collapsed(offset: cursorPos + 2),
       );
     }
-    
+
     HapticFeedback.selectionClick();
     widget.onContentChanged(_controller.text);
-    
+
     // Ensure focus is restored after the frame is built
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -222,7 +232,8 @@ class _RichTextNoteEditorState extends State<RichTextNoteEditor> {
                 widget.onEditingComplete?.call();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: SlapColors.primary,
                   borderRadius: BorderRadius.circular(8),
@@ -293,7 +304,9 @@ class _FormatButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: isActive ? SlapColors.primary.withOpacity(0.2) : Colors.transparent,
+            color: isActive
+                ? SlapColors.primary.withOpacity(0.2)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
           ),
           child: Icon(

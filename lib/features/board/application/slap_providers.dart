@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:slapp/features/board/data/models/slap_model.dart';
 import 'package:slapp/features/board/data/repositories/slap_repository.dart';
@@ -8,19 +10,19 @@ part 'slap_providers.g.dart';
 
 /// Repository provider
 @riverpod
-SlapRepository slapRepository(SlapRepositoryRef ref) {
+SlapRepository slapRepository(Ref ref) {
   return SlapRepository();
 }
 
 /// AI merge service provider
 @riverpod
-AiMergeService aiMergeService(AiMergeServiceRef ref) {
+AiMergeService aiMergeService(Ref ref) {
   return AiMergeService();
 }
 
 /// Stream provider for realtime slaps on a board
 @riverpod
-Stream<List<Slap>> slapsStream(SlapsStreamRef ref, String boardId) {
+Stream<List<Slap>> slapsStream(Ref ref, String boardId) {
   final repository = ref.watch(slapRepositoryProvider);
   return repository.watchSlaps(boardId);
 }
@@ -85,13 +87,13 @@ class SlapController extends _$SlapController {
 
   /// Delete a slap
   Future<void> deleteSlap(String slapId) async {
-    print('[SlapController] deleteSlap called with id: $slapId');
+    debugPrint('[SlapController] deleteSlap called with id: $slapId');
     try {
       final repository = ref.read(slapRepositoryProvider);
       await repository.deleteSlap(slapId);
-      print('[SlapController] deleteSlap successful');
+      debugPrint('[SlapController] deleteSlap successful');
     } catch (e) {
-      print('[SlapController] deleteSlap error: $e');
+      debugPrint('[SlapController] deleteSlap error: $e');
       // Handle error silently
     }
   }
@@ -135,10 +137,10 @@ class SlapController extends _$SlapController {
   Future<List<Slap>?> separateSlap(Slap mergedSlap) async {
     try {
       final repository = ref.read(slapRepositoryProvider);
-      
+
       // Set to processing
       await repository.setProcessing(mergedSlap.id, true);
-      
+
       // Separate the slap
       return await repository.separateSlap(mergedSlap);
     } catch (e) {

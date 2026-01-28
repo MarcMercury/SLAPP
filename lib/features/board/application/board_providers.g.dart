@@ -6,7 +6,7 @@ part of 'board_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$boardRepositoryHash() => r'05543fd712ad7a3c141410545d8ee32a6a530a35';
+String _$boardRepositoryHash() => r'ba686a1d643cf59b809e9bd39115adddbe84c06d';
 
 /// Repository provider
 ///
@@ -25,7 +25,7 @@ final boardRepositoryProvider = AutoDisposeProvider<BoardRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BoardRepositoryRef = AutoDisposeProviderRef<BoardRepository>;
-String _$boardsHash() => r'6779bf7ae1ae2538daaf16b52a23a9a2082705a7';
+String _$boardsHash() => r'6bed188b58396e5da5f07116df44ae502811e712';
 
 /// Provider for fetching all boards
 ///
@@ -43,7 +43,7 @@ final boardsProvider = AutoDisposeFutureProvider<List<Board>>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef BoardsRef = AutoDisposeFutureProviderRef<List<Board>>;
-String _$boardHash() => r'e41780bb10a506b77758451c943207a5361f1b1d';
+String _$boardHash() => r'46d52fd6556acac0d3dca79a1375be32b8bc7956';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -205,7 +205,7 @@ class _BoardProviderElement extends AutoDisposeFutureProviderElement<Board?>
   String get boardId => (origin as BoardProvider).boardId;
 }
 
-String _$boardControllerHash() => r'56f23d958b570f24068811984e91d7030c9105de';
+String _$boardControllerHash() => r'0117abcaf04f366dea2cceb9e4610a7abf1e7004';
 
 /// Controller for board operations
 ///

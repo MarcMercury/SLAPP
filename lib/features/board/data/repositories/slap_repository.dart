@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:slapp/features/board/data/models/slap_model.dart';
 import 'package:slapp/main.dart';
 
@@ -73,9 +74,9 @@ class SlapRepository {
 
   /// Delete a slap
   Future<void> deleteSlap(String slapId) async {
-    print('[SlapRepository] deleteSlap called with id: $slapId');
+    debugPrint('[SlapRepository] deleteSlap called with id: $slapId');
     await supabase.from('slaps').delete().eq('id', slapId);
-    print('[SlapRepository] deleteSlap completed');
+    debugPrint('[SlapRepository] deleteSlap completed');
   }
 
   /// Subscribe to realtime slap changes for a board
@@ -150,27 +151,27 @@ class SlapRepository {
     }
 
     final separatedSlaps = <Slap>[];
-    
+
     // Recreate original slaps with slight offset
     for (var i = 0; i < mergedSlap.mergedFrom!.length; i++) {
       final original = mergedSlap.mergedFrom![i];
       final offsetX = (i == 0) ? -30.0 : 30.0; // Offset left and right
-      
+
       final response = await supabase
           .from('slaps')
           .insert({
             'board_id': mergedSlap.boardId,
             'user_id': userId,
             'content': original['content'] ?? '',
-            'position_x': (original['position_x'] as num?)?.toDouble() ?? 
-                          mergedSlap.positionX + offsetX,
-            'position_y': (original['position_y'] as num?)?.toDouble() ?? 
-                          mergedSlap.positionY,
+            'position_x': (original['position_x'] as num?)?.toDouble() ??
+                mergedSlap.positionX + offsetX,
+            'position_y': (original['position_y'] as num?)?.toDouble() ??
+                mergedSlap.positionY,
             'color': original['color'] ?? 'FFFFE0',
           })
           .select()
           .single();
-      
+
       separatedSlaps.add(Slap.fromJson(response));
     }
 

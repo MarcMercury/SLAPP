@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:slapp/features/board/data/models/board_model.dart';
 import 'package:slapp/main.dart';
 
@@ -9,13 +10,10 @@ class BoardRepository {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return [];
 
-    final response = await supabase
-        .from('boards')
-        .select('''
+    final response = await supabase.from('boards').select('''
           *,
           member_count:board_members(count)
-        ''')
-        .order('created_at', ascending: false);
+        ''').order('created_at', ascending: false);
 
     return (response as List).map((json) {
       // Extract member count from nested count query
@@ -29,11 +27,8 @@ class BoardRepository {
 
   /// Get a single board by ID
   Future<Board?> getBoard(String boardId) async {
-    final response = await supabase
-        .from('boards')
-        .select()
-        .eq('id', boardId)
-        .maybeSingle();
+    final response =
+        await supabase.from('boards').select().eq('id', boardId).maybeSingle();
 
     if (response == null) return null;
     return Board.fromJson(response);
@@ -42,10 +37,10 @@ class BoardRepository {
   /// Create a new board using SECURITY DEFINER function
   Future<Board> createBoard(String name) async {
     final userId = supabase.auth.currentUser?.id;
-    print('[BoardRepository] createBoard called, userId: $userId');
-    
+    debugPrint('[BoardRepository] createBoard called, userId: $userId');
+
     if (userId == null) {
-      print('[BoardRepository] ERROR: User not authenticated');
+      debugPrint('[BoardRepository] ERROR: User not authenticated');
       throw Exception('User not authenticated');
     }
 
@@ -53,11 +48,11 @@ class BoardRepository {
       // Use RPC function to create board with member in single transaction
       final response = await supabase
           .rpc('create_board_with_member', params: {'board_name': name});
-      
-      print('[BoardRepository] Board created: ${response['id']}');
+
+      debugPrint('[BoardRepository] Board created: ${response['id']}');
       return Board.fromJson(response as Map<String, dynamic>);
     } catch (e) {
-      print('[BoardRepository] ERROR creating board: $e');
+      debugPrint('[BoardRepository] ERROR creating board: $e');
       rethrow;
     }
   }
@@ -102,9 +97,7 @@ class BoardRepository {
 
   /// Get board members
   Future<List<Map<String, dynamic>>> getBoardMembers(String boardId) async {
-    final response = await supabase
-        .from('board_members')
-        .select('''
+    final response = await supabase.from('board_members').select('''
           role,
           profiles:user_id (
             id,
@@ -112,8 +105,7 @@ class BoardRepository {
             phone_number,
             avatar_url
           )
-        ''')
-        .eq('board_id', boardId);
+        ''').eq('board_id', boardId);
 
     return List<Map<String, dynamic>>.from(response);
   }

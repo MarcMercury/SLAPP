@@ -63,9 +63,9 @@ class ProfileController extends _$ProfileController {
     state = const AsyncLoading();
     try {
       final profile = await ref.read(profileRepositoryProvider).upsertProfile(
-        username: username,
-        avatarUrl: avatarUrl,
-      );
+            username: username,
+            avatarUrl: avatarUrl,
+          );
       state = AsyncData(profile);
       return profile;
     } catch (e) {

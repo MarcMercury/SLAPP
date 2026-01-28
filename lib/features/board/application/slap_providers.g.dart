@@ -6,7 +6,7 @@ part of 'slap_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$slapRepositoryHash() => r'8fe6eae64dee0f28ee8d45caad93faf7ff9af0ca';
+String _$slapRepositoryHash() => r'c2a97b9200ffb07b1c51ff66ef261790e3fea783';
 
 /// Repository provider
 ///
@@ -25,7 +25,7 @@ final slapRepositoryProvider = AutoDisposeProvider<SlapRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef SlapRepositoryRef = AutoDisposeProviderRef<SlapRepository>;
-String _$aiMergeServiceHash() => r'81099c30c7f319f2b4e2c2019a57045c29e49fd4';
+String _$aiMergeServiceHash() => r'11b3feb05b0f4531b3813b1d7f4bf7b149295c77';
 
 /// AI merge service provider
 ///
@@ -44,7 +44,7 @@ final aiMergeServiceProvider = AutoDisposeProvider<AiMergeService>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AiMergeServiceRef = AutoDisposeProviderRef<AiMergeService>;
-String _$slapsStreamHash() => r'4ee7bf88d05e6360819f66d1ba4bbc8a89191ad6';
+String _$slapsStreamHash() => r'6147d1e2323c9d104cf0553cdd630edf34141c35';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -207,7 +207,7 @@ class _SlapsStreamProviderElement
   String get boardId => (origin as SlapsStreamProvider).boardId;
 }
 
-String _$slapControllerHash() => r'3e079e013734031d66983131517e932dccee08a4';
+String _$slapControllerHash() => r'adb0992a4e826d3f56000ad516ac7f620827a533';
 
 /// Controller for slap operations
 ///

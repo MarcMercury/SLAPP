@@ -40,7 +40,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   void _showWelcomeIfNeeded() async {
     if (_hasShownWelcome) return;
-    
+
     final isFirst = await ref.read(isFirstLoginProvider.future);
     if (isFirst && mounted) {
       _hasShownWelcome = true;
@@ -57,7 +57,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   void _createBoard() {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -70,7 +70,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 color: SlapColors.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.dashboard_customize, color: SlapColors.primary),
+              child: const Icon(Icons.dashboard_customize,
+                  color: SlapColors.primary),
             ),
             const SizedBox(width: 12),
             const Text('New Board'),
@@ -95,7 +96,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               ),
               filled: true,
             ),
-            onFieldSubmitted: (_) => _submitCreateBoard(formKey, controller, dialogContext),
+            onFieldSubmitted: (_) =>
+                _submitCreateBoard(formKey, controller, dialogContext),
           ),
         ),
         actions: [
@@ -104,7 +106,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => _submitCreateBoard(formKey, controller, dialogContext),
+            onPressed: () =>
+                _submitCreateBoard(formKey, controller, dialogContext),
             style: FilledButton.styleFrom(
               backgroundColor: SlapColors.primary,
             ),
@@ -121,21 +124,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
     BuildContext dialogContext,
   ) async {
     if (!formKey.currentState!.validate()) return;
-    
+
     final name = controller.text.trim();
     Navigator.of(dialogContext).pop();
-    
+
     try {
-      final board = await ref
-          .read(boardControllerProvider.notifier)
-          .createBoard(name);
-      
+      final board =
+          await ref.read(boardControllerProvider.notifier).createBoard(name);
+
       if (board != null && mounted) {
         context.go('/board/${board.id}');
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to create board'),
+          const SnackBar(
+            content: Text('Failed to create board'),
             backgroundColor: SlapColors.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -160,7 +162,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
 
   Widget _buildProfileButton() {
     final profileAsync = ref.watch(profileControllerProvider);
-    
+
     return IconButton(
       onPressed: _showProfile,
       icon: profileAsync.when(
@@ -204,7 +206,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
   Widget build(BuildContext context) {
     // Check for first login to show welcome
     WidgetsBinding.instance.addPostFrameCallback((_) => _showWelcomeIfNeeded());
-    
+
     final boardsAsync = ref.watch(boardsProvider);
 
     return Scaffold(
@@ -224,7 +226,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 ),
               ),
             ),
-            
+
             // Welcome message
             SliverToBoxAdapter(
               child: Padding(
@@ -263,9 +265,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
+                      Icon(Icons.error_outline,
+                          size: 48, color: Colors.grey.shade400),
                       const SizedBox(height: 16),
-                      Text('Failed to load boards', style: TextStyle(color: Colors.grey.shade600)),
+                      Text('Failed to load boards',
+                          style: TextStyle(color: Colors.grey.shade600)),
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () => ref.invalidate(boardsProvider),
@@ -284,7 +288,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
                 return SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
@@ -370,7 +375,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen>
               label: const Text('Create First Board'),
               style: FilledButton.styleFrom(
                 backgroundColor: SlapColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -469,7 +475,8 @@ class _BoardCard extends StatelessWidget {
                         end: Alignment.bottomLeft,
                         colors: [
                           Colors.grey.shade300,
-                          SlapColors.noteColors[index % SlapColors.noteColors.length],
+                          SlapColors
+                              .noteColors[index % SlapColors.noteColors.length],
                         ],
                       ),
                       borderRadius: const BorderRadius.only(
@@ -484,7 +491,7 @@ class _BoardCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.dashboard_rounded,
                         size: 32,
                         color: Colors.black54,
@@ -503,11 +510,12 @@ class _BoardCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.people, size: 14, color: Colors.black45),
+                          const Icon(Icons.people,
+                              size: 14, color: Colors.black45),
                           const SizedBox(width: 4),
                           Text(
                             '${board.memberCount} member${board.memberCount != 1 ? 's' : ''}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Colors.black54,
                             ),

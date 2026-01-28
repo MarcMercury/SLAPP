@@ -4,7 +4,8 @@ abstract class AppConstants {
   static const String appName = 'SLAP';
 
   /// App description
-  static const String appDescription = 'The Big Board - WhatsApp for Sticky Notes';
+  static const String appDescription =
+      'The Big Board - WhatsApp for Sticky Notes';
 
   /// Default sticky note colors (hex without #)
   static const List<String> stickyNoteColors = [

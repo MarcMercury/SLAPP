@@ -8,11 +8,8 @@ class ProfileRepository {
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) return null;
 
-    final response = await supabase
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
+    final response =
+        await supabase.from('profiles').select().eq('id', userId).maybeSingle();
 
     if (response == null) return null;
     return Profile.fromJson(response);
@@ -20,11 +17,8 @@ class ProfileRepository {
 
   /// Get a profile by user ID
   Future<Profile?> getProfile(String userId) async {
-    final response = await supabase
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
+    final response =
+        await supabase.from('profiles').select().eq('id', userId).maybeSingle();
 
     if (response == null) return null;
     return Profile.fromJson(response);
@@ -48,11 +42,8 @@ class ProfileRepository {
       'updated_at': DateTime.now().toIso8601String(),
     };
 
-    final response = await supabase
-        .from('profiles')
-        .upsert(data)
-        .select()
-        .single();
+    final response =
+        await supabase.from('profiles').upsert(data).select().single();
 
     return Profile.fromJson(response);
   }
@@ -97,17 +88,13 @@ class ProfileRepository {
 
     try {
       // Get board count - boards where user is creator
-      final boardsResponse = await supabase
-          .from('boards')
-          .select('id')
-          .eq('created_by', userId);
+      final boardsResponse =
+          await supabase.from('boards').select('id').eq('created_by', userId);
       final boardCount = (boardsResponse as List).length;
 
       // Get slaps count - all slaps created by user
-      final slapsResponse = await supabase
-          .from('slaps')
-          .select('id')
-          .eq('user_id', userId);
+      final slapsResponse =
+          await supabase.from('slaps').select('id').eq('user_id', userId);
       final slapCount = (slapsResponse as List).length;
 
       // Get merge count - slaps with merged_from not null

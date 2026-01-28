@@ -6,7 +6,7 @@ part of 'auth_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$authStateHash() => r'e5b723783d4f2bf9b3adf45827a5c85c3732b4ab';
+String _$authStateHash() => r'b847a0749c249cf099aa80b49b53501e8104aa8d';
 
 /// Auth state stream
 ///
@@ -24,7 +24,7 @@ final authStateProvider = AutoDisposeStreamProvider<AuthState>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthStateRef = AutoDisposeStreamProviderRef<AuthState>;
-String _$currentUserHash() => r'0c8076931c3886ef3896f3402cbb3d62756c2bbe';
+String _$currentUserHash() => r'4666d34041638b0ce749514fe860661d4673b01a';
 
 /// Current user provider
 ///
@@ -42,7 +42,7 @@ final currentUserProvider = AutoDisposeProvider<User?>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef CurrentUserRef = AutoDisposeProviderRef<User?>;
-String _$isFirstLoginHash() => r'b9c70eed1f31580354f0e5816a5297ac3ad3c6f6';
+String _$isFirstLoginHash() => r'6d5f76c36006e94c099913003ec109a12baed559';
 
 /// Check if this is the user's first login (for welcome dialog)
 ///

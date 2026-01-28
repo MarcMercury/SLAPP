@@ -43,11 +43,11 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
 
   Future<void> _loadMembers() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final repo = BoardRepository();
       final membersData = await repo.getBoardMembers(widget.boardId);
-      
+
       setState(() {
         _members = membersData.map((m) => BoardMember.fromJson(m)).toList();
         _isLoading = false;
@@ -125,20 +125,23 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                   : () async {
                       final phone = _phoneController.text.trim();
                       if (phone.isEmpty) return;
-                      
+
+                      final navigator = Navigator.of(context);
+                      final scaffoldMessenger = ScaffoldMessenger.of(context);
                       setDialogState(() => _isInviting = true);
-                      
+
                       try {
                         final repo = BoardRepository();
                         await repo.inviteMember(widget.boardId, phone);
-                        
+
                         if (mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          navigator.pop();
+                          scaffoldMessenger.showSnackBar(
                             SnackBar(
                               content: Row(
                                 children: [
-                                  const Icon(Icons.check_circle, color: Colors.white),
+                                  const Icon(Icons.check_circle,
+                                      color: Colors.white),
                                   const SizedBox(width: 8),
                                   Text('Invited $phone to the board!'),
                                 ],
@@ -155,7 +158,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                       } catch (e) {
                         setDialogState(() => _isInviting = false);
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          scaffoldMessenger.showSnackBar(
                             SnackBar(
                               content: Text('Error: $e'),
                               backgroundColor: SlapColors.error,
@@ -189,9 +192,9 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
     final currentUserIsAdmin = _members.any(
       (m) => m.odId == _currentUserId && m.isAdmin,
     );
-    
+
     if (!currentUserIsAdmin || member.odId == _currentUserId) return;
-    
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -212,7 +215,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             Text(
               member.displayName,
               style: GoogleFonts.fredoka(
@@ -221,7 +224,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Change Role
             ListTile(
               leading: Container(
@@ -246,7 +249,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                 await _changeRole(member);
               },
             ),
-            
+
             // Remove from board
             ListTile(
               leading: Container(
@@ -267,7 +270,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                 await _removeMember(member);
               },
             ),
-            
+
             const SizedBox(height: 16),
           ],
         ),
@@ -278,11 +281,15 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
   Future<void> _changeRole(BoardMember member) async {
     try {
       final newRole = member.isAdmin ? 'member' : 'admin';
-      
-      await supabase.from('board_members').update({
-        'role': newRole,
-      }).eq('board_id', widget.boardId).eq('user_id', member.odId);
-      
+
+      await supabase
+          .from('board_members')
+          .update({
+            'role': newRole,
+          })
+          .eq('board_id', widget.boardId)
+          .eq('user_id', member.odId);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -342,16 +349,16 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
         ],
       ),
     );
-    
+
     if (confirmed != true) return;
-    
+
     try {
       await supabase
           .from('board_members')
           .delete()
           .eq('board_id', widget.boardId)
           .eq('user_id', member.odId);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -405,7 +412,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
               ),
             ),
           ),
-          
+
           // Header
           Padding(
             padding: const EdgeInsets.all(20),
@@ -459,9 +466,9 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
               ],
             ),
           ),
-          
+
           const Divider(height: 1),
-          
+
           // Members List
           if (_isLoading)
             const Padding(
@@ -501,7 +508,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                 itemBuilder: (context, index) {
                   final member = _members[index];
                   final isCurrentUser = member.odId == _currentUserId;
-                  
+
                   return ListTile(
                     onTap: () => _showMemberOptions(member),
                     leading: _buildAvatar(member),
@@ -524,7 +531,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                               color: SlapColors.secondary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Text(
+                            child: const Text(
                               'You',
                               style: TextStyle(
                                 fontSize: 10,
@@ -565,7 +572,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
                 },
               ),
             ),
-          
+
           // Bottom padding for safe area
           SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
         ],
@@ -591,7 +598,7 @@ class _BoardMembersSheetState extends ConsumerState<BoardMembersSheet> {
         backgroundColor: SlapColors.accent.withOpacity(0.3),
       );
     }
-    
+
     // Default to initials
     return CircleAvatar(
       backgroundColor: SlapColors.secondary.withOpacity(0.1),

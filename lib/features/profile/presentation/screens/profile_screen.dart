@@ -20,16 +20,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  
+
   final _usernameController = TextEditingController();
   bool _isEditing = false;
   bool _isSaving = false;
 
   // Avatar options - using emoji for simplicity
   static const List<String> avatarOptions = [
-    '😀', '😎', '🤓', '🥳', '😊', '🤩', '🙂', '😇',
-    '👨', '👩', '🧑', '👴', '👵', '🧔', '👱', '🧕',
-    '🦸', '🦹', '🧙', '🧚', '🧛', '🧜', '🧝', '🧞',
+    '😀',
+    '😎',
+    '🤓',
+    '🥳',
+    '😊',
+    '🤩',
+    '🙂',
+    '😇',
+    '👨',
+    '👩',
+    '🧑',
+    '👴',
+    '👵',
+    '🧔',
+    '👱',
+    '🧕',
+    '🦸',
+    '🦹',
+    '🧙',
+    '🧚',
+    '🧛',
+    '🧜',
+    '🧝',
+    '🧞',
   ];
 
   String? _selectedAvatar;
@@ -41,16 +62,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
-    
+
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
-    
+
     _animController.forward();
     _loadProfile();
   }
@@ -74,13 +95,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
   void _saveProfile() async {
     setState(() => _isSaving = true);
-    
+
     try {
       await ref.read(profileControllerProvider.notifier).upsertProfile(
-        username: _usernameController.text.trim(),
-        avatarUrl: _selectedAvatar,
-      );
-      
+            username: _usernameController.text.trim(),
+            avatarUrl: _selectedAvatar,
+          );
+
       if (mounted) {
         setState(() {
           _isEditing = false;
@@ -97,7 +118,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
             backgroundColor: SlapColors.success,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -140,7 +162,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ],
       ),
     );
-    
+
     if (confirmed == true && mounted) {
       await supabase.auth.signOut();
       if (mounted) {
@@ -153,7 +175,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileControllerProvider);
     final user = ref.watch(currentUserProvider);
-    
+
     return Scaffold(
       body: SafeArea(
         child: FadeTransition(
@@ -185,7 +207,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('Save'),
                       )
@@ -196,7 +219,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       ),
                   ],
                 ),
-                
+
                 // Content
                 SliverToBoxAdapter(
                   child: Padding(
@@ -205,31 +228,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                       children: [
                         // Avatar Section
                         _buildAvatarSection(profileAsync),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Username Section
                         _buildUsernameSection(),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Phone Number (read-only)
                         _buildPhoneSection(user),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Avatar Picker (when editing)
                         if (_isEditing) ...[
                           _buildAvatarPicker(),
                           const SizedBox(height: 32),
                         ],
-                        
+
                         // Stats Section
                         if (!_isEditing) ...[
                           _buildActivitySection(),
                           const SizedBox(height: 32),
                         ],
-                        
+
                         // Sign Out Button
                         _buildSignOutButton(),
                       ],
@@ -375,7 +398,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: SlapColors.primary, width: 2),
+                  borderSide:
+                      const BorderSide(color: SlapColors.primary, width: 2),
                 ),
               ),
             )
@@ -386,9 +410,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   : 'Not set',
               style: TextStyle(
                 fontSize: 18,
-                color: _usernameController.text.isEmpty
-                    ? Colors.grey
-                    : null,
+                color: _usernameController.text.isEmpty ? Colors.grey : null,
               ),
             ),
         ],
@@ -517,7 +539,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             itemBuilder: (context, index) {
               final avatar = avatarOptions[index];
               final isSelected = _selectedAvatar == avatar;
-              
+
               return GestureDetector(
                 onTap: () => setState(() => _selectedAvatar = avatar),
                 child: Container(

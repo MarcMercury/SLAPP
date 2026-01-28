@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:slapp/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,13 +7,13 @@ part 'auth_providers.g.dart';
 
 /// Auth state stream
 @riverpod
-Stream<AuthState> authState(AuthStateRef ref) {
+Stream<AuthState> authState(Ref ref) {
   return supabase.auth.onAuthStateChange;
 }
 
 /// Current user provider
 @riverpod
-User? currentUser(CurrentUserRef ref) {
+User? currentUser(Ref ref) {
   return supabase.auth.currentUser;
 }
 
@@ -117,7 +118,7 @@ class AuthController extends _$AuthController {
 
 /// Check if this is the user's first login (for welcome dialog)
 @riverpod
-Future<bool> isFirstLogin(IsFirstLoginRef ref) async {
+Future<bool> isFirstLogin(Ref ref) async {
   final user = supabase.auth.currentUser;
   if (user == null) return false;
 

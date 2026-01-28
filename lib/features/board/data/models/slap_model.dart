@@ -9,7 +9,8 @@ class Slap {
   final String color;
   final bool isProcessing;
   final DateTime createdAt;
-  final List<Map<String, dynamic>>? mergedFrom; // Stores original notes data for separation
+  final List<Map<String, dynamic>>?
+      mergedFrom; // Stores original notes data for separation
 
   Slap({
     required this.id,
@@ -34,7 +35,7 @@ class Slap {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
     }
-    
+
     return Slap(
       id: json['id'] as String,
       boardId: json['board_id'] as String,
@@ -126,7 +127,7 @@ class Slap {
         .clamp(0.0, noteHeight);
 
     final overlapArea = overlapX * overlapY;
-    final thisArea = noteWidth * noteHeight;
+    const thisArea = noteWidth * noteHeight;
 
     return overlapArea / thisArea >= overlapThreshold;
   }

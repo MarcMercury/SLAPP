@@ -52,7 +52,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   Future<void> _signInWithGoogle() async {
-    final success = await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    final success =
+        await ref.read(authControllerProvider.notifier).signInWithGoogle();
     if (!success && mounted) {
       _showError('Failed to sign in with Google. Please try again.');
     }
@@ -66,7 +67,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     }
 
     _email = email;
-    final success = await ref.read(authControllerProvider.notifier).sendEmailOtp(_email);
+    final success =
+        await ref.read(authControllerProvider.notifier).sendEmailOtp(_email);
 
     if (success) {
       setState(() => _isOtpSent = true);
@@ -84,7 +86,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
       return;
     }
 
-    final success = await ref.read(authControllerProvider.notifier).verifyEmailOtp(_email, otp);
+    final success = await ref
+        .read(authControllerProvider.notifier)
+        .verifyEmailOtp(_email, otp);
 
     if (success && mounted) {
       context.go('/');
@@ -171,7 +175,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                             _isOtpSent
                                 ? 'Enter the 6-digit code sent to\n$_email'
                                 : 'Sign in to start collaborating',
-                            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                            style: TextStyle(
+                                fontSize: 14, color: Colors.grey.shade600),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
@@ -183,22 +188,32 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                             const SizedBox(height: 24),
                             Row(
                               children: [
-                                Expanded(child: Divider(color: Colors.grey.shade300)),
+                                Expanded(
+                                    child:
+                                        Divider(color: Colors.grey.shade300)),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text('or', style: TextStyle(color: Colors.grey.shade500)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  child: Text('or',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade500)),
                                 ),
-                                Expanded(child: Divider(color: Colors.grey.shade300)),
+                                Expanded(
+                                    child:
+                                        Divider(color: Colors.grey.shade300)),
                               ],
                             ),
                             const SizedBox(height: 24),
                             OutlinedButton.icon(
-                              onPressed: () => setState(() => _showEmailLogin = true),
+                              onPressed: () =>
+                                  setState(() => _showEmailLogin = true),
                               icon: const Icon(Icons.email_outlined),
                               label: const Text('Continue with Email'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ] else if (_showEmailLogin && !_isOtpSent) ...[
@@ -211,7 +226,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                                 labelText: 'Email Address',
                                 hintText: 'you@example.com',
                                 prefixIcon: const Icon(Icons.email_outlined),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                               ),
                               onSubmitted: (_) => _sendEmailOtp(),
@@ -222,16 +238,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                               style: FilledButton.styleFrom(
                                 backgroundColor: SlapColors.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                               child: isLoading
-                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('Send Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2, color: Colors.white))
+                                  : const Text('Send Code',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 16),
                             TextButton(
-                              onPressed: () => setState(() => _showEmailLogin = false),
+                              onPressed: () =>
+                                  setState(() => _showEmailLogin = false),
                               child: const Text('← Back to sign in options'),
                             ),
                           ] else if (_isOtpSent) ...[
@@ -242,12 +268,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                               textAlign: TextAlign.center,
                               maxLength: 6,
                               autofocus: true,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              style: GoogleFonts.jetBrainsMono(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 12),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 12),
                               decoration: InputDecoration(
                                 counterText: '',
                                 hintText: '000000',
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 filled: true,
                               ),
                               onSubmitted: (_) => _verifyEmailOtp(),
@@ -258,16 +290,30 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                               style: FilledButton.styleFrom(
                                 backgroundColor: SlapColors.primary,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                               child: isLoading
-                                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('Verify', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2, color: Colors.white))
+                                  : const Text('Verify',
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold)),
                             ),
                             const SizedBox(height: 16),
                             TextButton(
-                              onPressed: isLoading ? null : () => setState(() { _isOtpSent = false; _otpController.clear(); }),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => setState(() {
+                                        _isOtpSent = false;
+                                        _otpController.clear();
+                                      }),
                               child: const Text('Change email address'),
                             ),
                           ],
@@ -277,7 +323,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
                     const SizedBox(height: 24),
                     Text(
                       'By continuing, you agree to our Terms of Service',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade500),
                     ),
                   ],
                 ),
@@ -311,7 +358,10 @@ class _GoogleSignInButton extends StatelessWidget {
         ),
       ),
       child: isLoading
-          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+          ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2))
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -319,10 +369,13 @@ class _GoogleSignInButton extends StatelessWidget {
                   'https://www.google.com/favicon.ico',
                   width: 20,
                   height: 20,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 24),
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.g_mobiledata, size: 24),
                 ),
                 const SizedBox(width: 12),
-                Text('Continue with Google', style: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500)),
+                Text('Continue with Google',
+                    style: GoogleFonts.roboto(
+                        fontSize: 16, fontWeight: FontWeight.w500)),
               ],
             ),
     );

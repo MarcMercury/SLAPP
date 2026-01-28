@@ -47,7 +47,7 @@ class _StickyNoteState extends State<StickyNote>
     super.initState();
     _controller = TextEditingController(text: widget.slap.content);
     _focusNode = FocusNode();
-    
+
     _animController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
@@ -90,7 +90,7 @@ class _StickyNoteState extends State<StickyNote>
   @override
   Widget build(BuildContext context) {
     final noteColor = SlapColors.fromHex(widget.slap.color);
-    
+
     return GestureDetector(
       onLongPress: () {
         HapticFeedback.mediumImpact();
@@ -144,10 +144,11 @@ class _StickyNoteState extends State<StickyNote>
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(widget.isDragging ? 0.3 : 0.2),
+                  color:
+                      Colors.black.withOpacity(widget.isDragging ? 0.3 : 0.2),
                   blurRadius: widget.isDragging ? 12 : 8,
-                  offset: widget.isDragging 
-                      ? const Offset(4, 4) 
+                  offset: widget.isDragging
+                      ? const Offset(4, 4)
                       : const Offset(2, 2),
                 ),
               ],
@@ -163,7 +164,7 @@ class _StickyNoteState extends State<StickyNote>
                     painter: _FoldPainter(noteColor),
                   ),
                 ),
-                
+
                 // Merge indicator badge
                 if (widget.isHighlighted)
                   Positioned(
@@ -188,7 +189,7 @@ class _StickyNoteState extends State<StickyNote>
                       ),
                     ),
                   ),
-                
+
                 // Content
                 Padding(
                   padding: const EdgeInsets.all(12),
@@ -233,7 +234,7 @@ class _StickyNoteState extends State<StickyNote>
                           ],
                         ),
                 ),
-                
+
                 // Drag hint icon
                 Positioned(
                   bottom: 4,

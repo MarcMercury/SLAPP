@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:slapp/features/board/data/models/board_model.dart';
 import 'package:slapp/features/board/data/repositories/board_repository.dart';
@@ -6,20 +8,20 @@ part 'board_providers.g.dart';
 
 /// Repository provider
 @riverpod
-BoardRepository boardRepository(BoardRepositoryRef ref) {
+BoardRepository boardRepository(Ref ref) {
   return BoardRepository();
 }
 
 /// Provider for fetching all boards
 @riverpod
-Future<List<Board>> boards(BoardsRef ref) async {
+Future<List<Board>> boards(Ref ref) async {
   final repository = ref.watch(boardRepositoryProvider);
   return repository.getBoards();
 }
 
 /// Provider for a single board
 @riverpod
-Future<Board?> board(BoardRef ref, String boardId) async {
+Future<Board?> board(Ref ref, String boardId) async {
   final repository = ref.watch(boardRepositoryProvider);
   return repository.getBoard(boardId);
 }
@@ -40,7 +42,7 @@ class BoardController extends _$BoardController {
       return board;
     } catch (e) {
       // Log error but don't update state to avoid "Future already completed"
-      print('[BoardController] createBoard error: $e');
+      debugPrint('[BoardController] createBoard error: $e');
       rethrow;
     }
   }
@@ -52,7 +54,7 @@ class BoardController extends _$BoardController {
       await repository.deleteBoard(boardId);
       ref.invalidate(boardsProvider);
     } catch (e) {
-      print('[BoardController] deleteBoard error: $e');
+      debugPrint('[BoardController] deleteBoard error: $e');
       rethrow;
     }
   }
@@ -63,7 +65,7 @@ class BoardController extends _$BoardController {
       final repository = ref.read(boardRepositoryProvider);
       await repository.inviteMember(boardId, phoneNumber);
     } catch (e) {
-      print('[BoardController] inviteMember error: $e');
+      debugPrint('[BoardController] inviteMember error: $e');
       rethrow;
     }
   }

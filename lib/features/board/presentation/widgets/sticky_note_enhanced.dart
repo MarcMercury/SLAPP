@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:slapp/core/theme/slap_colors.dart';
 import 'package:slapp/features/board/data/models/slap_model.dart';
+import 'package:slapp/features/board/presentation/widgets/note_editor_sheet.dart';
 import 'package:slapp/features/board/presentation/widgets/rich_text_display.dart';
-import 'package:slapp/features/board/presentation/widgets/rich_text_note_editor.dart';
 
 /// Enhanced sticky note widget with drag, edit, and color support
 class StickyNoteEnhanced extends StatefulWidget {
@@ -36,12 +36,7 @@ class StickyNoteEnhanced extends StatefulWidget {
 
 class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
     with SingleTickerProviderStateMixin {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-  bool _isEditing = false;
   bool _showOptions = false;
-  Offset _startPosition = Offset.zero;
-  Offset _currentPosition = Offset.zero;
 
   late AnimationController _animController;
   late Animation<double> _scaleAnimation;
@@ -49,9 +44,6 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.slap.content);
-    _focusNode = FocusNode();
-    
     _animController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
@@ -62,35 +54,27 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
   }
 
   @override
-  void didUpdateWidget(StickyNoteEnhanced oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.slap.content != widget.slap.content && !_isEditing) {
-      _controller.text = widget.slap.content;
-    }
-  }
-
-  @override
   void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
     _animController.dispose();
     super.dispose();
   }
 
-  void _startEditing() {
-    setState(() {
-      _isEditing = true;
-      _showOptions = false;
-    });
-    _focusNode.requestFocus();
+  void _startEditing() async {
+    setState(() => _showOptions = false);
     HapticFeedback.selectionClick();
-  }
 
-  void _finishEditing() {
-    if (_controller.text != widget.slap.content) {
-      widget.onContentChanged(_controller.text);
+    // Show the modal editor sheet
+    final noteColor = SlapColors.fromHex(widget.slap.color);
+    final result = await NoteEditorSheet.show(
+      context: context,
+      initialContent: widget.slap.content,
+      noteColor: noteColor,
+    );
+
+    // If user saved, update the content
+    if (result != null && result != widget.slap.content) {
+      widget.onContentChanged(result);
     }
-    setState(() => _isEditing = false);
   }
 
   void _toggleOptions() {
@@ -101,7 +85,7 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
   @override
   Widget build(BuildContext context) {
     final noteColor = SlapColors.fromHex(widget.slap.color);
-    
+
     // Build the main note that can be dragged
     Widget buildMainNote() {
       return Container(
@@ -112,7 +96,8 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
           borderRadius: BorderRadius.circular(4),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(widget.slap.isProcessing ? 0.1 : 0.2),
+              color: Colors.black
+                  .withOpacity(widget.slap.isProcessing ? 0.1 : 0.2),
               blurRadius: widget.slap.isProcessing ? 4 : 8,
               offset: const Offset(2, 2),
             ),
@@ -129,7 +114,7 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                 painter: _FoldPainter(noteColor),
               ),
             ),
-            
+
             // Processing indicator
             if (widget.slap.isProcessing)
               Positioned.fill(
@@ -146,25 +131,13 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                   ),
                 ),
               ),
-            
-            // Content
+
+            // Content - always show display, editing is in modal
             Padding(
               padding: const EdgeInsets.all(12),
-              child: _isEditing
-                  ? SizedBox(
-                      height: 120,
-                      child: RichTextNoteEditor(
-                        initialContent: _controller.text,
-                        focusNode: _focusNode,
-                        onContentChanged: (content) {
-                          _controller.text = content;
-                        },
-                        onEditingComplete: _finishEditing,
-                      ),
-                    )
-                  : RichTextDisplay(
-                      content: widget.slap.content,
-                    ),
+              child: RichTextDisplay(
+                content: widget.slap.content,
+              ),
             ),
           ],
         ),
@@ -187,7 +160,7 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                 onTap: () => setState(() => _showOptions = false),
               ),
             ),
-            
+
             // The draggable/tappable note - positioned to account for menu space
             Positioned(
               top: 70, // Space for menu above
@@ -197,7 +170,7 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                 child: buildMainNote(),
               ),
             ),
-            
+
             // Options menu - rendered on top, positioned at top center
             Positioned(
               top: 0,
@@ -209,7 +182,8 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                   borderRadius: BorderRadius.circular(12),
                   color: Colors.white,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -241,7 +215,8 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                           },
                         ),
                         // Show Separate button only for merged notes
-                        if (widget.slap.isMerged && widget.onSeparateTap != null)
+                        if (widget.slap.isMerged &&
+                            widget.onSeparateTap != null)
                           _buildOptionButton(
                             icon: Icons.call_split,
                             color: Colors.blue,
@@ -256,7 +231,8 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
                           color: SlapColors.error,
                           label: 'Delete',
                           onTap: () {
-                            print('[StickyNote] Delete button tapped for slap: ${widget.slap.id}');
+                            debugPrint(
+                                '[StickyNote] Delete button tapped for slap: ${widget.slap.id}');
                             setState(() => _showOptions = false);
                             widget.onDelete();
                           },
@@ -271,7 +247,7 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
         ),
       );
     }
-    
+
     // Normal state without options
     return Stack(
       clipBehavior: Clip.none,
@@ -284,18 +260,15 @@ class _StickyNoteEnhancedState extends State<StickyNoteEnhanced>
             _startEditing();
           },
           onPanStart: (details) {
-            if (_isEditing) return;
             // Pass global position to parent for coordinate conversion
             widget.onDragStart(details.globalPosition);
             _animController.forward();
           },
           onPanUpdate: (details) {
-            if (_isEditing) return;
             // Pass global position to parent for coordinate conversion
             widget.onDragUpdate(details.globalPosition);
           },
           onPanEnd: (details) {
-            if (_isEditing) return;
             // Parent tracks position, just notify drag ended
             widget.onDragEnd();
             _animController.reverse();
