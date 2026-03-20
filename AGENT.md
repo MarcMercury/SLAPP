@@ -1,11 +1,12 @@
-# AGENT.md: SLAPP (The Big Board)
+# AGENT.md: SLAPP — Story Layering And Production Platform
 
 ## 1. Project Vision
 
-**Product:** SLAPP (Domain: slapp.fun)  
-**Concept:** A "WhatsApp for Ideation." High-speed, collaborative whiteboard for small groups.  
-**Core Loop:** Users create groups ("Boards"), invite friends via phone number, and "slap" sticky notes onto an infinite canvas.  
-**The Hook:** Merging. Dragging notes together triggers AI synthesis (Edge Functions) to combine ideas.
+**Product:** SLAPP — Story Layering And Production Platform (Domain: slapp.co)  
+**Concept:** An intelligent story-building platform combining writing, visual storyboarding, narrative intelligence, and AI assistance into one deeply connected creative system.  
+**Core Principle:** "Everything in the system knows what everything else is." — 21 story object types, all cross-linked. Characters know their scenes, places know their events, mysteries know their clues.  
+**The Hook:** SLAPP Merge. Dragging story objects together triggers AI synthesis to combine, connect, or transform ideas.  
+**Tech Stack:** Next.js 14+ (App Router), TypeScript, Tailwind CSS, Supabase, Tiptap, @dnd-kit, ReactFlow, Zustand, OpenAI.
 
 ---
 

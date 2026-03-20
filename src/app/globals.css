@@ -1,0 +1,217 @@
+@import "tailwindcss";
+
+/* ── SLAPP Design System ─────────────────────────────────── */
+
+@theme inline {
+  /* Brand Colors */
+  --color-slapp-orange: #FF6B35;
+  --color-slapp-blue: #004E89;
+  --color-slapp-gold: #FFD166;
+  --color-slapp-mint: #06D6A0;
+  --color-slapp-coral: #EF476F;
+  
+  /* Surface colors - Dark mode first (creative studio feel) */
+  --color-surface-0: #0B0D11;
+  --color-surface-1: #12151C;
+  --color-surface-2: #1A1E28;
+  --color-surface-3: #232834;
+  --color-surface-4: #2D3340;
+  --color-surface-hover: #353B4A;
+  
+  /* Text */
+  --color-text-primary: #F0F2F5;
+  --color-text-secondary: #9BA3B5;
+  --color-text-muted: #5C6478;
+  
+  /* Border */
+  --color-border-subtle: #1F2430;
+  --color-border-default: #2D3340;
+  --color-border-strong: #3D4455;
+  
+  /* Status */
+  --color-status-draft: #6B7280;
+  --color-status-rough: #F59E0B;
+  --color-status-good: #3B82F6;
+  --color-status-polished: #10B981;
+  --color-status-locked: #8B5CF6;
+
+  /* Fonts */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-display: "Inter", system-ui, sans-serif;
+}
+
+/* ── Base Styles ─────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-4) transparent;
+}
+
+body {
+  background: var(--color-surface-0);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-slapp-orange) 30%, transparent);
+  color: white;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-4);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-hover);
+}
+
+/* ── Focus styles ────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-slapp-orange);
+  outline-offset: 2px;
+}
+
+/* ── TipTap Editor ───────────────────────────────────────── */
+
+.tiptap {
+  outline: none;
+  min-height: 300px;
+  padding: 1rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-text-primary);
+}
+
+.tiptap p {
+  margin-bottom: 0.75em;
+}
+
+.tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5em;
+  color: var(--color-text-primary);
+}
+
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: var(--color-text-primary);
+}
+
+.tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  color: var(--color-text-primary);
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: var(--color-text-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid var(--color-slapp-orange);
+  padding-left: 1rem;
+  margin-left: 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.tiptap code {
+  background: var(--color-surface-3);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+.tiptap pre {
+  background: var(--color-surface-2);
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.tiptap pre code {
+  background: none;
+  padding: 0;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75em;
+}
+
+.tiptap hr {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: 1.5em 0;
+}
+
+/* ── ReactFlow overrides ─────────────────────────────────── */
+
+.react-flow__background {
+  background: var(--color-surface-0) !important;
+}
+
+.react-flow__node {
+  border-radius: 8px;
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-surface-4);
+  stroke-width: 2;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-slapp-orange) 40%, transparent); }
+  50% { box-shadow: 0 0 20px 4px color-mix(in srgb, var(--color-slapp-orange) 20%, transparent); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
